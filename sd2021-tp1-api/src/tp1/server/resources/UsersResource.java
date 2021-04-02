@@ -26,11 +26,11 @@ public class UsersResource implements RestUsers {
 	public String createUser(User user) {
 		Log.info("createUser : " + user);
 		
-		// Check if user is valid, if not return HTTP CONFLICT (409)
+		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
 		if(user.getUserId() == null || user.getPassword() == null || user.getFullName() == null || 
 				user.getEmail() == null) {
 			Log.info("User object invalid.");
-			throw new WebApplicationException( Status.CONFLICT );
+			throw new WebApplicationException( Status.BAD_REQUEST );
 		}
 
 		// Check if userId does not exist exists, if not return HTTP CONFLICT (409)
@@ -50,21 +50,21 @@ public class UsersResource implements RestUsers {
 	public User getUser(String userId, String password) {
 		Log.info("getUser : user = " + userId + "; pwd = " + password);
 		
-		// Check if user is valid, if not return HTTP CONFLICT (409)
+		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
 		if(userId == null || password == null) {
 			Log.info("UserId or password null.");
-			throw new WebApplicationException( Status.CONFLICT );
+			throw new WebApplicationException( Status.BAD_REQUEST );
 		}
 		
 		User user = users.get(userId);
 		
-		// Check if user exists 
+		// Check if user exists, if not return HTTP NOT_FOUND (404)
 		if( user == null ) {
 			Log.info("User does not exist.");
 			throw new WebApplicationException( Status.NOT_FOUND );
 		}
 		
-		// Check if the password is correct
+		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
 		if( !user.getPassword().equals( password)) {
 			Log.info("Password is incorrect.");
 			throw new WebApplicationException( Status.FORBIDDEN );
@@ -78,21 +78,21 @@ public class UsersResource implements RestUsers {
 	public User updateUser(String userId, String password, User user) {
 		Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
-		// Check if data is valid, if not return HTTP CONFLICT (409)
+		// Check if data is valid, if not return HTTP BAD_REQUEST (400)
 		if(userId == null || password == null || user == null) {
 			Log.info("UserId, password or user object null.");
-			throw new WebApplicationException( Status.CONFLICT );
+			throw new WebApplicationException( Status.BAD_REQUEST );
 		}
 
 		User tempUser = this.users.get(userId);
 
-		// Check if userId does not exist exists, if not return HTTP CONFLICT (409)
+		// Check if userId exists, if not return HTTP NOT_FOUND (404)
 		if( tempUser == null) {
-			Log.info("User doesn't exists.");
+			Log.info("User doesn't exist.");
 			throw new WebApplicationException( Status.NOT_FOUND );
 		}
 
-		// Check if the password is correct
+		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
 		if( !tempUser.getPassword().equals(password)) {
 			Log.info("Password is incorrect.");
 			throw new WebApplicationException( Status.FORBIDDEN );
@@ -116,13 +116,13 @@ public class UsersResource implements RestUsers {
 
 		User user = this.users.get(userId);
 
-		// Check if userId does not exist exists, if not return HTTP CONFLICT (409)
+		// Check if userId exists, if not return HTTP NOT_FOUND (404)
 		if( user == null) {
-			Log.info("User doesn't exists.");
+			Log.info("User doesn't exist.");
 			throw new WebApplicationException( Status.NOT_FOUND );
 		}
 
-		// Check if the password is correct
+		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
 		if( !user.getPassword().equals(password)) {
 			Log.info("Password is incorrect.");
 			throw new WebApplicationException( Status.FORBIDDEN );
