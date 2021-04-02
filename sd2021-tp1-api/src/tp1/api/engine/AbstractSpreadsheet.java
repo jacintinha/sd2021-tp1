@@ -14,17 +14,17 @@ public interface AbstractSpreadsheet {
     /**
      * The number of rows of the spreadsheet
      */
-    int rows();
+    int getRows();
 
     /**
      * The number of columns of the spreadsheet
      */
-    int columns();
+    int getColumns();
 
     /**
      * The id of the spreadsheet
      */
-    String sheetId();
+    String getSheetId();
 
     /**
      * Called by the engine to obtain the raw value of a cell, given its row, col coordinates

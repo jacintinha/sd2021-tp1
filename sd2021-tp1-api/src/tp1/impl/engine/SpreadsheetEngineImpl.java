@@ -56,19 +56,19 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 
     public List<List<String>> computeSpreadsheetValues(AbstractSpreadsheet sheet) {
         ExcelFile workbook = new ExcelFile();
-        ExcelWorksheet worksheet = workbook.addWorksheet(sheet.sheetId());
+        ExcelWorksheet worksheet = workbook.addWorksheet(sheet.getSheetId());
 
-        for (int i = 0; i < sheet.columns(); i++)
-            for (int j = 0; j < sheet.rows(); j++) {
+        for (int i = 0; i < sheet.getColumns(); i++)
+            for (int j = 0; j < sheet.getRows(); j++) {
                 String rawVal = sheet.cellRawValue(i, j);
                 ExcelCell cell = worksheet.getCell(i, j);
                 setCell(sheet, worksheet, cell, rawVal);
             }
         worksheet.calculate();
         List<List<String>> rows = new ArrayList<>();
-        for (int i = 0; i < sheet.columns(); i++) {
+        for (int i = 0; i < sheet.getColumns(); i++) {
             List<String> columns = new ArrayList<>();
-            for (int j = 0; j < sheet.rows(); j++) {
+            for (int j = 0; j < sheet.getRows(); j++) {
                 ExcelCell cell = worksheet.getCell(i, j);
                 columns.add(cell.getValue().toString());
             }
