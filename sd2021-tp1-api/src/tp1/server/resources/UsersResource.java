@@ -1,156 +1,156 @@
 package tp1.server.resources;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
 import tp1.api.service.rest.RestUsers;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
 @Singleton
 public class UsersResource implements RestUsers {
 
-	private final Map<String, User> users = new HashMap<String, User>();
+    private final Map<String, User> users = new HashMap<>();
 
-	private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
-	
-	public UsersResource() {
-	}
+    private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
 
-	@Override
-	public String createUser(User user) {
-		Log.info("createUser : " + user);
-		
-		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
-		if(user.getUserId() == null || user.getPassword() == null || user.getFullName() == null || 
-				user.getEmail() == null) {
-			Log.info("User object invalid.");
-			throw new WebApplicationException( Status.BAD_REQUEST );
-		}
+    public UsersResource() {
+    }
 
-		// Check if userId does not exist exists, if not return HTTP CONFLICT (409)
-		if( users.containsKey(user.getUserId())) {
-			Log.info("User already exists.");
-			throw new WebApplicationException( Status.CONFLICT );
-		}
+    @Override
+    public String createUser(User user) {
+        Log.info("createUser : " + user);
 
-		//Add the user to the map of users
-		users.put(user.getUserId(), user);
-		
-		return user.getUserId();
-	}
+        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
+        if (user.getUserId() == null || user.getPassword() == null || user.getFullName() == null ||
+                user.getEmail() == null) {
+            Log.info("User object invalid.");
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
 
+        // Check if userId exists, if not return HTTP CONFLICT (409)
+        if (this.users.containsKey(user.getUserId())) {
+            Log.info("User already exists.");
+            throw new WebApplicationException(Status.CONFLICT);
+        }
 
-	@Override
-	public User getUser(String userId, String password) {
-		Log.info("getUser : user = " + userId + "; pwd = " + password);
-		
-		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
-		if(userId == null || password == null) {
-			Log.info("UserId or password null.");
-			throw new WebApplicationException( Status.BAD_REQUEST );
-		}
-		
-		User user = users.get(userId);
-		
-		// Check if user exists, if not return HTTP NOT_FOUND (404)
-		if( user == null ) {
-			Log.info("User does not exist.");
-			throw new WebApplicationException( Status.NOT_FOUND );
-		}
-		
-		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
-		if( !user.getPassword().equals( password)) {
-			Log.info("Password is incorrect.");
-			throw new WebApplicationException( Status.FORBIDDEN );
-		}
-		
-		return user;
-	}
+        //Add the user to the map of users
+        this.users.put(user.getUserId(), user);
+
+        return user.getUserId();
+    }
 
 
-	@Override
-	public User updateUser(String userId, String password, User user) {
-		Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
+    @Override
+    public User getUser(String userId, String password) {
+        Log.info("getUser : user = " + userId + "; pwd = " + password);
 
-		// Check if data is valid, if not return HTTP BAD_REQUEST (400)
-		if(userId == null || password == null || user == null) {
-			Log.info("UserId, password or user object null.");
-			throw new WebApplicationException( Status.BAD_REQUEST );
-		}
+        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
+        if (userId == null || password == null) {
+            Log.info("UserId or password null.");
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
 
-		User tempUser = this.users.get(userId);
+        User user = this.users.get(userId);
 
-		// Check if userId exists, if not return HTTP NOT_FOUND (404)
-		if( tempUser == null) {
-			Log.info("User doesn't exist.");
-			throw new WebApplicationException( Status.NOT_FOUND );
-		}
+        // Check if user exists, if not return HTTP NOT_FOUND (404)
+        if (user == null) {
+            Log.info("User does not exist.");
+            throw new WebApplicationException(Status.NOT_FOUND);
+        }
 
-		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
-		if( !tempUser.getPassword().equals(password)) {
-			Log.info("Password is incorrect.");
-			throw new WebApplicationException( Status.FORBIDDEN );
-		}
+        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
+        if (!user.getPassword().equals(password)) {
+            Log.info("Password is incorrect.");
+            throw new WebApplicationException(Status.FORBIDDEN);
+        }
 
-		this.users.put(userId, user);
-
-		return user;
-	}
+        return user;
+    }
 
 
-	@Override
-	public User deleteUser(String userId, String password) {
-		Log.info("deleteUser : user = " + userId + "; pwd = " + password);
-		
-		// Check if data is valid, if not return HTTP CONFLICT (409)
-		if(userId == null || password == null) {
-			Log.info("UserId or password null.");
-			throw new WebApplicationException( Status.CONFLICT );
-		}
+    @Override
+    public User updateUser(String userId, String password, User user) {
+        Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
-		User user = this.users.get(userId);
+        // Check if data is valid, if not return HTTP BAD_REQUEST (400)
+        if (userId == null || password == null || user == null) {
+            Log.info("UserId, password or user object null.");
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
 
-		// Check if userId exists, if not return HTTP NOT_FOUND (404)
-		if( user == null) {
-			Log.info("User doesn't exist.");
-			throw new WebApplicationException( Status.NOT_FOUND );
-		}
+        User tempUser = this.users.get(userId);
 
-		// Check if the password is correct, if not return HTTP FORBIDDEN (403)
-		if( !user.getPassword().equals(password)) {
-			Log.info("Password is incorrect.");
-			throw new WebApplicationException( Status.FORBIDDEN );
-		}
+        // Check if userId exists, if not return HTTP NOT_FOUND (404)
+        if (tempUser == null) {
+            Log.info("User doesn't exist.");
+            throw new WebApplicationException(Status.NOT_FOUND);
+        }
 
-		users.remove(userId);
+        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
+        if (!tempUser.getPassword().equals(password)) {
+            Log.info("Password is incorrect.");
+            throw new WebApplicationException(Status.FORBIDDEN);
+        }
 
-		return user;
-	}
+        this.users.put(userId, user);
+
+        return user;
+    }
 
 
-	@Override
-	public List<User> searchUsers(String pattern) {
-		Log.info("searchUsers : pattern = " + pattern);
+    @Override
+    public User deleteUser(String userId, String password) {
+        Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 
-		if (pattern == null) {
-			return new LinkedList<User>(this.users.values());
-		} else {
-			List<User> list = new LinkedList<User>();
+        // Check if data is valid, if not return HTTP CONFLICT (409)
+        if (userId == null || password == null) {
+            Log.info("UserId or password null.");
+            throw new WebApplicationException(Status.CONFLICT);
+        }
 
-			for (Map.Entry<String, User> entry : this.users.entrySet()) {
-			    if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
-			    	list.add(entry.getValue());
-			    }
-			}
-			
-			return list;
-		}
-	}
+        User user = this.users.get(userId);
+
+        // Check if userId exists, if not return HTTP NOT_FOUND (404)
+        if (user == null) {
+            Log.info("User doesn't exist.");
+            throw new WebApplicationException(Status.NOT_FOUND);
+        }
+
+        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
+        if (!user.getPassword().equals(password)) {
+            Log.info("Password is incorrect.");
+            throw new WebApplicationException(Status.FORBIDDEN);
+        }
+
+        this.users.remove(userId);
+
+        return user;
+    }
+
+
+    @Override
+    public List<User> searchUsers(String pattern) {
+        Log.info("searchUsers : pattern = " + pattern);
+
+        if (pattern == null) {
+            return new LinkedList<User>(this.users.values());
+        } else {
+            List<User> list = new LinkedList<User>();
+
+            for (Map.Entry<String, User> entry : this.users.entrySet()) {
+                if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
+                    list.add(entry.getValue());
+                }
+            }
+
+            return list;
+        }
+    }
 
 }
