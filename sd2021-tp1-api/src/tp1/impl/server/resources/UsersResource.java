@@ -1,68 +1,65 @@
 package tp1.impl.server.resources;
 
-import jakarta.inject.Singleton;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import tp1.api.User;
-import tp1.api.service.rest.RestUsers;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
+
+import jakarta.inject.Singleton;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response.Status;
+import tp1.api.User;
+import tp1.api.service.rest.RestUsers;
 
 @Singleton
 public class UsersResource implements RestUsers {
 
-    private final Map<String, User> users = new HashMap<>();
+	private final Map<String, User> users = new HashMap<>();
 
-    private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
+	private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
 
-    public UsersResource() {
-    }
+	public UsersResource() {
+	}
 
-    @Override
-    public String createUser(User user) {
-        Log.info("createUser : " + user);
+	@Override
+	public String createUser(User user) {
+		Log.info("createUser : " + user);
 
-        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
-        if (user.getUserId() == null || user.getPassword() == null || user.getFullName() == null ||
-                user.getEmail() == null) {
-            Log.info("User object invalid.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        }
+		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
+		if (user.getUserId() == null || user.getPassword() == null || user.getFullName() == null
+				|| user.getEmail() == null) {
+			Log.info("User object invalid.");
+			throw new WebApplicationException(Status.BAD_REQUEST);
+		}
 
-        synchronized (this) {
-            // Check if userId exists, if not return HTTP CONFLICT (409)
-            if (this.users.containsKey(user.getUserId())) {
-                Log.info("User already exists.");
-                throw new WebApplicationException(Status.CONFLICT);
-            }
+		synchronized (this) {
+			// Check if userId exists, if not return HTTP CONFLICT (409)
+			if (this.users.containsKey(user.getUserId())) {
+				Log.info("User already exists.");
+				throw new WebApplicationException(Status.CONFLICT);
+			}
 
-            //Add the user to the map of users
-            this.users.put(user.getUserId(), user);
-        }
+			// Add the user to the map of users
+			this.users.put(user.getUserId(), user);
+		}
 
-        return user.getUserId();
-    }
+		return user.getUserId();
+	}
 
+	@Override
+	public User getUser(String userId, String password) {
+		Log.info("getUser : user = " + userId + "; pwd = " + password);
 
-    @Override
-    public User getUser(String userId, String password) {
-        Log.info("getUser : user = " + userId + "; pwd = " + password);
+		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
+		if (userId == null || password == null) {
+			Log.info("UserId or password null.");
+			throw new WebApplicationException(Status.BAD_REQUEST);
+		}
 
-        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
-        if (userId == null || password == null) {
-            Log.info("UserId or password null.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        }
+		User user;
 
-        User user;
-
-        synchronized (this) {
+		synchronized (this) {
 			user = this.users.get(userId);
 			// Check if user exists, if not return HTTP NOT_FOUND (404)
 			if (user == null) {
@@ -77,20 +74,19 @@ public class UsersResource implements RestUsers {
 		}
 
 		return user;
-    }
+	}
 
+	@Override
+	public User updateUser(String userId, String password, User user) {
+		Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
-    @Override
-    public User updateUser(String userId, String password, User user) {
-        Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
+		// Check if data is valid, if not return HTTP BAD_REQUEST (400)
+		if (userId == null || password == null || user == null) {
+			Log.info("UserId, password or user object null.");
+			throw new WebApplicationException(Status.BAD_REQUEST);
+		}
 
-        // Check if data is valid, if not return HTTP BAD_REQUEST (400)
-        if (userId == null || password == null || user == null) {
-            Log.info("UserId, password or user object null.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        }
-
-        synchronized (this) {
+		synchronized (this) {
 			User tempUser = this.users.get(userId);
 			// Check if userId exists, if not return HTTP NOT_FOUND (404)
 			if (tempUser == null) {
@@ -106,22 +102,21 @@ public class UsersResource implements RestUsers {
 		}
 
 		return user;
-    }
+	}
 
+	@Override
+	public User deleteUser(String userId, String password) {
+		Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 
-    @Override
-    public User deleteUser(String userId, String password) {
-        Log.info("deleteUser : user = " + userId + "; pwd = " + password);
+		// Check if data is valid, if not return HTTP CONFLICT (409)
+		if (userId == null || password == null) {
+			Log.info("UserId or password null.");
+			throw new WebApplicationException(Status.CONFLICT);
+		}
 
-        // Check if data is valid, if not return HTTP CONFLICT (409)
-        if (userId == null || password == null) {
-            Log.info("UserId or password null.");
-            throw new WebApplicationException(Status.CONFLICT);
-        }
+		User user;
 
-        User user;
-
-        synchronized (this) {
+		synchronized (this) {
 			user = this.users.get(userId);
 			// Check if userId exists, if not return HTTP NOT_FOUND (404)
 			if (user == null) {
@@ -136,28 +131,27 @@ public class UsersResource implements RestUsers {
 			this.users.remove(userId);
 		}
 		return user;
-    }
+	}
 
+	@Override
+	public List<User> searchUsers(String pattern) {
+		Log.info("searchUsers : pattern = " + pattern);
 
-    @Override
-    public List<User> searchUsers(String pattern) {
-        Log.info("searchUsers : pattern = " + pattern);
-        
-        // TODO synch?
-        
-        if (pattern == null) {
-            return new LinkedList<User>(this.users.values());
-        } else {
-            List<User> list = new LinkedList<User>();
+		// TODO synch?
 
-            for (Map.Entry<String, User> entry : this.users.entrySet()) {
-                if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
-                    list.add(entry.getValue());
-                }
-            }
+		if (pattern == null) {
+			return new LinkedList<User>(this.users.values());
+		} else {
+			List<User> list = new LinkedList<User>();
 
-            return list;
-        }
-    }
+			for (Map.Entry<String, User> entry : this.users.entrySet()) {
+				if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
+					list.add(entry.getValue());
+				}
+			}
+
+			return list;
+		}
+	}
 
 }
