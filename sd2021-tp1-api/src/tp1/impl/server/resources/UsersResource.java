@@ -2,6 +2,7 @@ package tp1.impl.server.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
 import tp1.api.service.rest.RestUsers;
@@ -10,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 @Singleton
@@ -33,14 +35,16 @@ public class UsersResource implements RestUsers {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        // Check if userId exists, if not return HTTP CONFLICT (409)
-        if (this.users.containsKey(user.getUserId())) {
-            Log.info("User already exists.");
-            throw new WebApplicationException(Status.CONFLICT);
-        }
+        synchronized (this) {
+            // Check if userId exists, if not return HTTP CONFLICT (409)
+            if (this.users.containsKey(user.getUserId())) {
+                Log.info("User already exists.");
+                throw new WebApplicationException(Status.CONFLICT);
+            }
 
-        //Add the user to the map of users
-        this.users.put(user.getUserId(), user);
+            //Add the user to the map of users
+            this.users.put(user.getUserId(), user);
+        }
 
         return user.getUserId();
     }
@@ -56,21 +60,23 @@ public class UsersResource implements RestUsers {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        User user = this.users.get(userId);
+        User user;
 
-        // Check if user exists, if not return HTTP NOT_FOUND (404)
-        if (user == null) {
-            Log.info("User does not exist.");
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
+        synchronized (this) {
+			user = this.users.get(userId);
+			// Check if user exists, if not return HTTP NOT_FOUND (404)
+			if (user == null) {
+				Log.info("User does not exist.");
+				throw new WebApplicationException(Status.NOT_FOUND);
+			}
+			// Check if the password is correct, if not return HTTP FORBIDDEN (403)
+			if (!user.getPassword().equals(password)) {
+				Log.info("Password is incorrect.");
+				throw new WebApplicationException(Status.FORBIDDEN);
+			}
+		}
 
-        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-        if (!user.getPassword().equals(password)) {
-            Log.info("Password is incorrect.");
-            throw new WebApplicationException(Status.FORBIDDEN);
-        }
-
-        return user;
+		return user;
     }
 
 
@@ -84,23 +90,22 @@ public class UsersResource implements RestUsers {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        User tempUser = this.users.get(userId);
+        synchronized (this) {
+			User tempUser = this.users.get(userId);
+			// Check if userId exists, if not return HTTP NOT_FOUND (404)
+			if (tempUser == null) {
+				Log.info("User doesn't exist.");
+				throw new WebApplicationException(Status.NOT_FOUND);
+			}
+			// Check if the password is correct, if not return HTTP FORBIDDEN (403)
+			if (!tempUser.getPassword().equals(password)) {
+				Log.info("Password is incorrect.");
+				throw new WebApplicationException(Status.FORBIDDEN);
+			}
+			this.users.put(userId, user);
+		}
 
-        // Check if userId exists, if not return HTTP NOT_FOUND (404)
-        if (tempUser == null) {
-            Log.info("User doesn't exist.");
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
-        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-        if (!tempUser.getPassword().equals(password)) {
-            Log.info("Password is incorrect.");
-            throw new WebApplicationException(Status.FORBIDDEN);
-        }
-
-        this.users.put(userId, user);
-
-        return user;
+		return user;
     }
 
 
@@ -114,30 +119,32 @@ public class UsersResource implements RestUsers {
             throw new WebApplicationException(Status.CONFLICT);
         }
 
-        User user = this.users.get(userId);
+        User user;
 
-        // Check if userId exists, if not return HTTP NOT_FOUND (404)
-        if (user == null) {
-            Log.info("User doesn't exist.");
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
-        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-        if (!user.getPassword().equals(password)) {
-            Log.info("Password is incorrect.");
-            throw new WebApplicationException(Status.FORBIDDEN);
-        }
-
-        this.users.remove(userId);
-
-        return user;
+        synchronized (this) {
+			user = this.users.get(userId);
+			// Check if userId exists, if not return HTTP NOT_FOUND (404)
+			if (user == null) {
+				Log.info("User doesn't exist.");
+				throw new WebApplicationException(Status.NOT_FOUND);
+			}
+			// Check if the password is correct, if not return HTTP FORBIDDEN (403)
+			if (!user.getPassword().equals(password)) {
+				Log.info("Password is incorrect.");
+				throw new WebApplicationException(Status.FORBIDDEN);
+			}
+			this.users.remove(userId);
+		}
+		return user;
     }
 
 
     @Override
     public List<User> searchUsers(String pattern) {
         Log.info("searchUsers : pattern = " + pattern);
-
+        
+        // TODO synch?
+        
         if (pattern == null) {
             return new LinkedList<User>(this.users.values());
         } else {
