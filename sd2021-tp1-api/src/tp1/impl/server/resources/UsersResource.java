@@ -1,4 +1,4 @@
-package tp1.server.resources;
+package tp1.impl.server.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;

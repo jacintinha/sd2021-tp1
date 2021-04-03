@@ -1,4 +1,4 @@
-package tp1.discovery;
+package tp1.impl.discovery;
 
 import java.net.URI;
 import java.net.URISyntaxException;

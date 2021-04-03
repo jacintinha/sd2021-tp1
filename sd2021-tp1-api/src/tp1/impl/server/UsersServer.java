@@ -1,9 +1,9 @@
-package tp1.server;
+package tp1.impl.server;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import tp1.discovery.Discovery;
-import tp1.server.resources.UsersResource;
+import tp1.impl.discovery.Discovery;
+import tp1.impl.server.resources.UsersResource;
 
 import java.net.InetAddress;
 import java.net.URI;

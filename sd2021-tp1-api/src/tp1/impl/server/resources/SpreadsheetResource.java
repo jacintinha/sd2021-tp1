@@ -1,11 +1,10 @@
-package tp1.server.resources;
+package tp1.impl.server.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.User;
-import tp1.api.engine.SpreadsheetEngine;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 
