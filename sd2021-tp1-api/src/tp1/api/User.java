@@ -20,6 +20,13 @@ public class User {
 		this.password = password;
 	}
 
+	public User(User user) {
+		this.email = user.getEmail();
+		this.userId = user.getUserId();
+		this.fullName = user.getFullName();
+		this.password = user.getPassword();
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

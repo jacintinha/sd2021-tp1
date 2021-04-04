@@ -152,12 +152,18 @@ public class UsersResource implements RestUsers {
 
 			for (Map.Entry<String, User> entry : this.users.entrySet()) {
 				if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
-					list.add(entry.getValue());
+					list.add(safeUser(entry.getValue()));
 				}
 			}
 
 			return list;
 		}
+	}
+	
+	public User safeUser(User user) {
+		User safeUser = new User(user);
+		safeUser.setPassword("");
+		return safeUser;
 	}
 
 }
