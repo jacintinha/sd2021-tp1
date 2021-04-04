@@ -52,7 +52,7 @@ public class UsersResource implements RestUsers {
 		Log.info("getUser : user = " + userId + "; pwd = " + password);
 
 		// Check if user is valid, if not return HTTP BAD_REQUEST (400)
-		if (userId == null || password == null) {
+		if (userId == null /*|| password == null*/) {
 			Log.info("UserId or password null.");
 			throw new WebApplicationException(Status.BAD_REQUEST);
 		}
@@ -81,27 +81,33 @@ public class UsersResource implements RestUsers {
 		Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
 		// Check if data is valid, if not return HTTP BAD_REQUEST (400)
-		if (userId == null || password == null || user == null) {
+		if (userId == null || /*password == null ||*/ user == null) {
 			Log.info("UserId, password or user object null.");
 			throw new WebApplicationException(Status.BAD_REQUEST);
 		}
 
+		User tempUser;
 		synchronized (this) {
-			User tempUser = this.users.get(userId);
+			tempUser = this.users.get(userId);
 			// Check if userId exists, if not return HTTP NOT_FOUND (404)
 			if (tempUser == null) {
 				Log.info("User doesn't exist.");
 				throw new WebApplicationException(Status.NOT_FOUND);
 			}
+
 			// Check if the password is correct, if not return HTTP FORBIDDEN (403)
 			if (!tempUser.getPassword().equals(password)) {
 				Log.info("Password is incorrect.");
 				throw new WebApplicationException(Status.FORBIDDEN);
 			}
-			this.users.put(userId, user);
+
+			// TODO refactor?
+			if (user.getEmail() != null) tempUser.setEmail(user.getEmail());
+			if (user.getPassword() != null) tempUser.setPassword(user.getPassword());
+			if (user.getFullName() != null) tempUser.setFullName(user.getFullName());
 		}
 
-		return user;
+		return tempUser;
 	}
 
 	@Override
@@ -109,7 +115,7 @@ public class UsersResource implements RestUsers {
 		Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 
 		// Check if data is valid, if not return HTTP CONFLICT (409)
-		if (userId == null || password == null) {
+		if (userId == null /*|| password == null*/) {
 			Log.info("UserId or password null.");
 			throw new WebApplicationException(Status.CONFLICT);
 		}

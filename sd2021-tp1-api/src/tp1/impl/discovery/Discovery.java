@@ -139,7 +139,6 @@ public class Discovery {
 	 * @return an array of URI with the service instances discovered.
 	 */
 	public URI[] knownUrisOf(String serviceName) {
-
 		Set<URIEntry> uriSet = knownURIs.get(serviceName);
 
 		if (uriSet == null) return null;

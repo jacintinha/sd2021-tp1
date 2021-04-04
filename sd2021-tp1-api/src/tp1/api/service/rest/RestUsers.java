@@ -53,8 +53,10 @@ public interface RestUsers {
 	 * @param password password of the user
 	 * @param user     Updated information
 	 * @return 200 the updated user object, if the name exists and password matches
-	 *         the existing password 403 if the password is incorrect 404 if no user
-	 *         exists with the provided userId 400 otherwise.
+	 *         the existing password
+	 *         403 if the password is incorrect
+	 *         404 if no user exists with the provided userId
+	 *         400 otherwise.
 	 */
 	@PUT
 	@Path("/{userId}")
