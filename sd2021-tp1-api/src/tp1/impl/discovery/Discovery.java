@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+
 /**
  * <p>
  * A class to perform service discovery, based on periodic service contact
@@ -138,13 +139,16 @@ public class Discovery {
 	 * @return an array of URI with the service instances discovered.
 	 */
 	public URI[] knownUrisOf(String serviceName) {
-		URI[] uris = new URI[knownURIs.size()];
-		int counter = 0;
 
 		Set<URIEntry> uriSet = knownURIs.get(serviceName);
 
+		if (uriSet == null) return null;
+
+		URI uris[] = new URI[uriSet.size()];
+		int counter = 0;
+
 		for (URIEntry elem : uriSet) {
-			uris[counter++] = elem.getURI();
+		    uris[counter++] = elem.getURI();
 		}
 
 		return uris;
