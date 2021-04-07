@@ -1,7 +1,5 @@
 package tp1.api.engine;
 
-import java.util.List;
-
 /**
  * Interface used to feed a spreadsheet to the SpreadsheetEngine and compute its
  * values.
@@ -35,11 +33,10 @@ public interface AbstractSpreadsheet {
 	String cellRawValue(int row, int col);
 
 	/**
-	 * Called by the engine to resolve importrange formulas.
-	 *
+	 * Called by the engine to resolve importrange formulas
 	 * @param sheetURL - the url of the sheet referenced by the importrange formula
-	 * @param range    - the range of cells covered by the formula
-	 * @return the list of values, row by row or null if any error occurred.
+	 * @param range - the range of cells covered by the formula
+	 * @return the computed values.
 	 */
-	List<String> getRangeValues(String sheetURL, String range);
+	String[][] getRangeValues(String sheetURL, String range);
 }

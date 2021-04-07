@@ -1,7 +1,7 @@
 package tp1.impl.engine;
 
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.regex.Pattern;
 
 import com.gembox.spreadsheet.ExcelCell;
 import com.gembox.spreadsheet.ExcelFile;
@@ -10,6 +10,8 @@ import com.gembox.spreadsheet.SpreadsheetInfo;
 
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.engine.SpreadsheetEngine;
+import tp1.util.CellRange;
+
 
 /**
  * Engine for computing the results of a spreadsheet.
@@ -30,51 +32,50 @@ import tp1.api.engine.SpreadsheetEngine;
  *           // get remote range ... } });
  */
 public class SpreadsheetEngineImpl implements SpreadsheetEngine {
-
-	private static SpreadsheetEngineImpl instance;
-
-	private SpreadsheetEngineImpl() {
+	
+	private SpreadsheetEngineImpl() {		
 	}
 
-	static synchronized public SpreadsheetEngine getInstance() {
-		if (instance == null)
-			instance = new SpreadsheetEngineImpl();
-		return instance;
+	static public SpreadsheetEngine getInstance() {
+		return new SpreadsheetEngineImpl();
 	}
-
-	public List<List<String>> computeSpreadsheetValues(AbstractSpreadsheet sheet) {
+	
+	
+	public String[][] computeSpreadsheetValues(AbstractSpreadsheet sheet) {
 		ExcelFile workbook = new ExcelFile();
-		ExcelWorksheet worksheet = workbook.addWorksheet(sheet.getSheetId());
+		ExcelWorksheet worksheet = workbook.addWorksheet(sheet.sheetId());
 
-		for (int i = 0; i < sheet.getColumns(); i++)
-			for (int j = 0; j < sheet.getRows(); j++) {
+		for (int i = 0; i < sheet.rows(); i++)
+			for (int j = 0; j < sheet.columns(); j++) {
 				String rawVal = sheet.cellRawValue(i, j);
 				ExcelCell cell = worksheet.getCell(i, j);
 				setCell(sheet, worksheet, cell, rawVal);
 			}
+
+//		try {
+//			workbook.save("/tmp/" + sheet.sheetId() + ".xls");
+//		} catch( Exception x ) {
+//			x.printStackTrace();
+//		}
 		worksheet.calculate();
-		List<List<String>> rows = new ArrayList<>();
-		for (int i = 0; i < sheet.getColumns(); i++) {
-			List<String> columns = new ArrayList<>();
-			for (int j = 0; j < sheet.getRows(); j++) {
-				ExcelCell cell = worksheet.getCell(i, j);
-				columns.add(cell.getValue().toString());
+
+		var cells = new String[sheet.rows()][sheet.columns()];
+		for (int row = 0; row < sheet.rows(); row++) {
+			for (int col = 0; col < sheet.columns(); col++) {
+				ExcelCell cell = worksheet.getCell(row, col);
+				var value = cell.getValue();
+				cells[row][col] = value != null ? value.toString() : "#ERROR?";
 			}
-			rows.add(columns);
 		}
-		return rows;
+		return cells;
 	}
-
-	enum CellType {
-		EMPTY, BOOLEAN, NUMBER, IMPORTRANGE, TEXT, FORMULA
-	}
-
-	;
-
-	static void setCell(AbstractSpreadsheet sheet, ExcelWorksheet worksheet, ExcelCell cell, String rawVal) {
-		CellType type = parseRawValue(rawVal);
-
-		switch (type) {
+	
+	enum CellType { EMPTY, BOOLEAN, NUMBER, IMPORTRANGE, TEXT, FORMULA };
+	
+	static void setCell( AbstractSpreadsheet sheet, ExcelWorksheet worksheet, ExcelCell cell, String rawVal ) {
+		CellType type = parseRawValue( rawVal );
+		
+		switch( type ) {
 		case BOOLEAN:
 			cell.setValue(Boolean.parseBoolean(rawVal));
 			break;
@@ -85,15 +86,34 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 			cell.setFormula(rawVal);
 			break;
 		case TEXT:
+		case EMPTY:
 			cell.setValue(rawVal);
 			break;
 		case IMPORTRANGE:
+			var matcher = IMPORTRANGE_PATTERN.matcher(rawVal);
+			if( matcher.matches()) {
+				var sheetUrl = matcher.group(1);
+				var range = matcher.group(2);
+				var values = sheet.getRangeValues(sheetUrl, range);
+				applyRange( worksheet, cell, new CellRange(range), values);
+			}
 			// TODO
 			throw new RuntimeException("Not yet implemented...");
 		case EMPTY:
 			break;
 		}
 		;
+	}
+	
+	
+	private static void applyRange(ExcelWorksheet worksheet, ExcelCell cell0, CellRange range, String[][] values) {
+		int row0 = cell0.getRow().getIndex(), col0 = cell0.getColumn().getIndex();
+
+		for (int r = 0; r < range.rows(); r++)
+			for (int c = 0; c < range.cols(); c++) {
+				var cell = worksheet.getCell(row0 + r, col0 + c);
+				setCell(null, worksheet, cell, values[r][c]);
+			}
 	}
 
 	static CellType parseRawValue(String rawVal) {
@@ -119,7 +139,8 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 	static {
 		SpreadsheetInfo.setLicense("FREE-LIMITED-KEY");
 	}
-
+	
+	private static final String URL_REGEX = "(.+)";
 	private static final String IMPORTRANGE_FORMULA = "=importrange";
-
+	private static final Pattern IMPORTRANGE_PATTERN = Pattern.compile(String.format("=importrange\\(\"%s\",\"(%s)\"\\)", URL_REGEX, CellRange.RANGE_REGEX));
 }
