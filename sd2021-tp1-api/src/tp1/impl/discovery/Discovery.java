@@ -36,6 +36,8 @@ import java.util.logging.Logger;
 public class Discovery {
 	private static final Logger Log = Logger.getLogger(Discovery.class.getName());
 
+	private static Discovery instance;
+
 	static {
 		// addresses some multicast issues on some TCP/IP stacks
 		System.setProperty("java.net.preferIPv4Stack", "true");
@@ -51,30 +53,30 @@ public class Discovery {
 	// Used separate the two fields that make up a service announcement.
 	private static final String DELIMITER = "\t";
 
-	private InetSocketAddress addr;
-	private String serviceName;
-	private String serviceURI;
-	private Map<String, Set<URIEntry>> knownURIs;
+//	private InetSocketAddress addr;
+//	private String serviceName;
+//	private String serviceURI;
+	private final Map<String, Set<URIEntry>> knownURIs;
 
-	/**
-	 * @param serviceName the name of the service to announce
-	 * @param serviceURI  an uri string - representing the contact endpoint of the
-	 *                    service being announced
-	 */
-	public Discovery(InetSocketAddress addr, String serviceName, String serviceURI) {
-		this.addr = addr;
-		this.serviceName = serviceName;
-		this.serviceURI = serviceURI;
-		this.knownURIs = new HashMap<String, Set<URIEntry>>();
+	public static Discovery getInstance() {
+		if (instance == null) {
+			instance = new Discovery();
+		}
+
+		return instance;
+	}
+
+	public Discovery() {
+		this.knownURIs = new HashMap<>();
 	}
 
 	/**
 	 * Starts sending service announcements at regular intervals...
 	 */
-	public void start() {
+	public void start(String domain, InetSocketAddress addr, String serviceName, String serviceURI) {
 		Log.info(String.format("Starting Discovery announcements on: %s for: %s -> %s", addr, serviceName, serviceURI));
 
-		byte[] announceBytes = String.format("%s%s%s", serviceName, DELIMITER, serviceURI).getBytes();
+		byte[] announceBytes = String.format(domain+":%s%s%s", serviceName, DELIMITER, serviceURI).getBytes();
 		DatagramPacket announcePkt = new DatagramPacket(announceBytes, announceBytes.length, addr);
 
 		try {
@@ -106,11 +108,11 @@ public class Discovery {
 							System.out.printf("FROM %s (%s) : %s\n", pkt.getAddress().getCanonicalHostName(),
 									pkt.getAddress().getHostAddress(), msg);
 
-							String serviceName = msgElems[0];
-							String serviceURI = msgElems[1];
-							URIEntry newEntry = new URIEntry(serviceURI);
+							String rcvServiceName = msgElems[0];
+							String rcvServiceURI = msgElems[1];
+							URIEntry newEntry = new URIEntry(rcvServiceURI);
 
-							Set<URIEntry> uriSet = this.knownURIs.get(serviceName);
+							Set<URIEntry> uriSet = this.knownURIs.get(rcvServiceName);
 
 							if (uriSet == null)
 								uriSet = new HashSet<>();
@@ -120,7 +122,7 @@ public class Discovery {
 							uriSet.remove(newEntry);
 							uriSet.add(newEntry);
 
-							this.knownURIs.put(serviceName, uriSet);
+							this.knownURIs.put(rcvServiceName, uriSet);
 						}
 					} catch (IOException e) {
 						// do nothing
@@ -139,11 +141,11 @@ public class Discovery {
 	 * @return an array of URI with the service instances discovered.
 	 */
 	public URI[] knownUrisOf(String serviceName) {
-		Set<URIEntry> uriSet = knownURIs.get(serviceName);
+		Set<URIEntry> uriSet = this.knownURIs.get(serviceName);
 
 		if (uriSet == null) return null;
 
-		URI uris[] = new URI[uriSet.size()];
+		URI[] uris = new URI[uriSet.size()];
 		int counter = 0;
 
 		for (URIEntry elem : uriSet) {
@@ -153,9 +155,4 @@ public class Discovery {
 		return uris;
 	}
 
-	// Main just for testing purposes
-//	public static void main( String[] args) throws Exception {
-//		Discovery discovery = new Discovery( DISCOVERY_ADDR, "test", "http://" + InetAddress.getLocalHost().getHostAddress());
-//		discovery.start();
-//	}
 }

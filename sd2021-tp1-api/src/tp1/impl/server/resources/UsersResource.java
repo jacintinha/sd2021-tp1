@@ -136,6 +136,9 @@ public class UsersResource implements RestUsers {
 			}
 			this.users.remove(userId);
 		}
+
+		// TODO wipe spreadsheets
+
 		return user;
 	}
 

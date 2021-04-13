@@ -22,18 +22,8 @@ public class GetUserClient {
 	public final static int CONNECTION_TIMEOUT = 1000;
 	public final static int REPLY_TIMEOUT = 600;
 
-	public static void main(String[] args) throws IOException {
-
-		if (args.length != 3) {
-			System.err.println("Use: java sd2021.aula2.clients.GetUserClient url userId password");
-			return;
-		}
-
-		// TODO use discovery
-		String serverUrl = args[0];
-		String userId = args[1];
-		String password = args[2];
-
+	public static User getUser(String serverUrl, String userId, String password) throws IOException {
+//		serverUrl = "http://172.22.0.3:8080/rest";
 		System.out.println("Sending request to server.");
 
 		ClientConfig config = new ClientConfig();
@@ -59,6 +49,7 @@ public class GetUserClient {
 					System.out.println("Success:");
 					User u = r.readEntity(User.class);
 					System.out.println("User : " + u);
+					return u;
 				} else
 					System.out.println("Error, HTTP error status: " + r.getStatus());
 
@@ -75,7 +66,7 @@ public class GetUserClient {
 				System.out.println("Retrying to execute request.");
 			}
 		}
-
+		return null;
 	}
 
 }

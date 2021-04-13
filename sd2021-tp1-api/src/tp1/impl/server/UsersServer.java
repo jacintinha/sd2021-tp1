@@ -20,7 +20,8 @@ public class UsersServer {
 	}
 
 	public static final int PORT = 8080;
-	public static final String SERVICE = "UsersService";
+	public static final String SERVICE = "users";
+	public static String domain = "";
 
 	public static void main(String[] args) {
 		try {
@@ -29,14 +30,15 @@ public class UsersServer {
 			ResourceConfig config = new ResourceConfig();
 			config.register(UsersResource.class);
 
+			domain = args[0];
+
 			String serverURI = String.format("http://%s:%s/rest", ip, PORT);
 			JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config);
 
 			Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
 
 			// More code can be executed here...
-			Discovery disc = new Discovery(Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
-			disc.start();
+			Discovery.getInstance().start(domain, Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
 
 		} catch (Exception e) {
 			Log.severe(e.getMessage());
