@@ -14,25 +14,42 @@ import tp1.util.CellRange;
 
 
 /**
- * Engine for computing the results of a spreadsheet.
- * <p>
- * Use: Spreadsheet sheet = ...;
- * <p>
- * List<List<String>> values =
- * SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues( new
- * AbstractSpreadsheet() {
- *
- * @Override public int rows() { return sheet.getLines(); }
- * @Override public int columns() { return sheet.getColumns(); }
- * @Override public String sheetId() { return sheet.getSheetId(); }
- * @Override public String cellRawValue(int row, int col) { try { return
- *           sheet.getRawValues().get(row).get(col); } catch(
- *           IndexOutOfBoundsException e) { return "#ERR?"; } }
- * @Override public List<String> getRangeValues(String sheetURL, String range) {
- *           // get remote range ... } });
- */
+Example of use:
+
+Spreadsheet sheet = ...
+String[][] values = SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues(new AbstractSpreadsheet() {
+	@Override
+	public int rows() {
+		return sheet.getRows();
+	}
+
+	@Override
+	public int columns() {
+		return sheet.getColumns();
+	}
+
+	@Override
+	public String sheetId() {
+		return sheet.getSheetId();
+	}
+
+	@Override
+	public String cellRawValue(int row, int col) {
+		try {
+			return sheet.getRawValues()[row][col];
+		} catch (IndexOutOfBoundsException e) {
+			return "#ERROR?";
+		}
+	}
+
+	@Override
+	public String[][] getRangeValues(String sheetURL, String range) {
+		// get remote range values
+	});
+*/
 public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 	
+	private static final String ERROR = "#ERROR?";
 	private SpreadsheetEngineImpl() {		
 	}
 
@@ -64,7 +81,7 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 			for (int col = 0; col < sheet.columns(); col++) {
 				ExcelCell cell = worksheet.getCell(row, col);
 				var value = cell.getValue();
-				cells[row][col] = value != null ? value.toString() : "#ERROR?";
+				cells[row][col] = value != null ? value.toString() : ERROR;
 			}
 		}
 		return cells;
@@ -95,7 +112,10 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 				var sheetUrl = matcher.group(1);
 				var range = matcher.group(2);
 				var values = sheet.getRangeValues(sheetUrl, range);
-				applyRange( worksheet, cell, new CellRange(range), values);
+				if( values != null )
+					applyRange( worksheet, cell, new CellRange(range), values);
+				else
+					cell.setValue(ERROR);
 			}
 			// TODO
 			throw new RuntimeException("Not yet implemented...");
