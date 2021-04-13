@@ -159,11 +159,10 @@ public class UsersResource implements RestUsers {
 			return list;
 		}
 	}
-	
+
 	public User safeUser(User user) {
 		User safeUser = new User(user);
 		safeUser.setPassword("");
 		return safeUser;
 	}
-
 }

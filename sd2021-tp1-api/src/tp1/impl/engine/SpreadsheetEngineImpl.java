@@ -14,50 +14,45 @@ import tp1.util.CellRange;
 
 
 /**
-Example of use:
-
-Spreadsheet sheet = ...
-String[][] values = SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues(new AbstractSpreadsheet() {
-	@Override
-	public int rows() {
-		return sheet.getRows();
-	}
-
-	@Override
-	public int columns() {
-		return sheet.getColumns();
-	}
-
-	@Override
-	public String sheetId() {
-		return sheet.getSheetId();
-	}
-
-	@Override
-	public String cellRawValue(int row, int col) {
-		try {
-			return sheet.getRawValues()[row][col];
-		} catch (IndexOutOfBoundsException e) {
-			return "#ERROR?";
-		}
-	}
-
-	@Override
-	public String[][] getRangeValues(String sheetURL, String range) {
-		// get remote range values
-	});
-*/
+ Example of use:
+ Spreadsheet sheet = ...
+ String[][] values = SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues(new AbstractSpreadsheet() {
+@Override
+public int rows() {
+return sheet.getRows();
+}
+@Override
+public int columns() {
+return sheet.getColumns();
+}
+@Override
+public String sheetId() {
+return sheet.getSheetId();
+}
+@Override
+public String cellRawValue(int row, int col) {
+try {
+return sheet.getRawValues()[row][col];
+} catch (IndexOutOfBoundsException e) {
+return "#ERROR?";
+}
+}
+@Override
+public String[][] getRangeValues(String sheetURL, String range) {
+// get remote range values
+});
+ */
 public class SpreadsheetEngineImpl implements SpreadsheetEngine {
-	
+
 	private static final String ERROR = "#ERROR?";
-	private SpreadsheetEngineImpl() {		
+	private SpreadsheetEngineImpl() {
 	}
 
 	static public SpreadsheetEngine getInstance() {
 		return new SpreadsheetEngineImpl();
 	}
-	
-	
+
+
 	public String[][] computeSpreadsheetValues(AbstractSpreadsheet sheet) {
 		ExcelFile workbook = new ExcelFile();
 		ExcelWorksheet worksheet = workbook.addWorksheet(sheet.sheetId());
@@ -86,46 +81,42 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 		}
 		return cells;
 	}
-	
+
 	enum CellType { EMPTY, BOOLEAN, NUMBER, IMPORTRANGE, TEXT, FORMULA };
-	
+
 	static void setCell( AbstractSpreadsheet sheet, ExcelWorksheet worksheet, ExcelCell cell, String rawVal ) {
 		CellType type = parseRawValue( rawVal );
-		
+
 		switch( type ) {
-		case BOOLEAN:
-			cell.setValue(Boolean.parseBoolean(rawVal));
-			break;
-		case NUMBER:
-			cell.setValue(Double.parseDouble(rawVal));
-			break;
-		case FORMULA:
-			cell.setFormula(rawVal);
-			break;
-		case TEXT:
-		case EMPTY:
-			cell.setValue(rawVal);
-			break;
-		case IMPORTRANGE:
-			var matcher = IMPORTRANGE_PATTERN.matcher(rawVal);
-			if( matcher.matches()) {
-				var sheetUrl = matcher.group(1);
-				var range = matcher.group(2);
-				var values = sheet.getRangeValues(sheetUrl, range);
-				if( values != null )
-					applyRange( worksheet, cell, new CellRange(range), values);
-				else
-					cell.setValue(ERROR);
-			}
-			// TODO
-			throw new RuntimeException("Not yet implemented...");
-		case EMPTY:
-			break;
-		}
-		;
+			case BOOLEAN:
+				cell.setValue( Boolean.parseBoolean( rawVal ));
+				break;
+			case NUMBER:
+				cell.setValue( Double.parseDouble(rawVal));
+				break;
+			case FORMULA:
+				cell.setFormula(rawVal);
+				break;
+			case TEXT:
+			case EMPTY:
+				cell.setValue(rawVal);
+				break;
+			case IMPORTRANGE:
+				var matcher = IMPORTRANGE_PATTERN.matcher(rawVal);
+				if( matcher.matches()) {
+					var sheetUrl = matcher.group(1);
+					var range = matcher.group(2);
+					var values = sheet.getRangeValues(sheetUrl, range);
+					if( values != null )
+						applyRange( worksheet, cell, new CellRange(range), values);
+					else
+						cell.setValue(ERROR);
+				}
+				break;
+		};
 	}
-	
-	
+
+
 	private static void applyRange(ExcelWorksheet worksheet, ExcelCell cell0, CellRange range, String[][] values) {
 		int row0 = cell0.getRow().getIndex(), col0 = cell0.getColumn().getIndex();
 
@@ -159,7 +150,7 @@ public class SpreadsheetEngineImpl implements SpreadsheetEngine {
 	static {
 		SpreadsheetInfo.setLicense("FREE-LIMITED-KEY");
 	}
-	
+
 	private static final String URL_REGEX = "(.+)";
 	private static final String IMPORTRANGE_FORMULA = "=importrange";
 	private static final Pattern IMPORTRANGE_PATTERN = Pattern.compile(String.format("=importrange\\(\"%s\",\"(%s)\"\\)", URL_REGEX, CellRange.RANGE_REGEX));

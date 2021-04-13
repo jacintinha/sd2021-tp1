@@ -10,6 +10,7 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
+import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 
@@ -41,7 +42,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 		// TODO
 		/*
 		 * User user = getUser(sheet.getOwner(), password);
-		 * 
+		 *
 		 * // Check if password is correct, if not return HTTP BAD_REQUEST (400) if
 		 * (!user.getPassword().equals(password)) { Log.info("Password is incorrect.");
 		 * throw new WebApplicationException(Status.BAD_REQUEST); }
@@ -65,12 +66,12 @@ public class SpreadsheetResource implements RestSpreadsheets {
 		// TODO
 		/*
 		 * User user = getUser(userId, password);
-		 * 
-		 * 
+		 *
+		 *
 		 * // Check if user exists, if not return HTTP NOT_FOUND (404) if (user == null
 		 * || sheet == null) { Log.info("User or sheet does not exist."); throw new
 		 * WebApplicationException(Status.NOT_FOUND); }
-		 * 
+		 *
 		 * // Check if the password is correct, if not return HTTP FORBIDDEN (403) if
 		 * (!user.getPassword().equals(password)) { Log.info("Password is incorrect.");
 		 * throw new WebApplicationException(Status.FORBIDDEN); }
@@ -80,7 +81,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 	}
 
 	@Override
-	public List<List<String>> getSpreadsheetValues(String sheetId, String userId, String password) {
+	public String[][] getSpreadsheetValues(String sheetId, String userId, String password) {
 		// Check if user the sheet and the password are valid, if not return HTTP
 		// BAD_REQUEST (400)
 		if (sheetId == null || userId == null || password == null) {
@@ -105,8 +106,8 @@ public class SpreadsheetResource implements RestSpreadsheets {
 		 * info("The spreadsheet is not shared with the user, the user is not the owner or the password is incorrect."
 		 * ); throw new WebApplicationException(Status.FORBIDDEN); }
 		 */
-
-		return SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues(sheet);
+		// TODO
+		return SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues((AbstractSpreadsheet) sheet);
 	}
 
 	public void updateCell(String sheetId, String cell, String rawValue, String userId, String password) {
