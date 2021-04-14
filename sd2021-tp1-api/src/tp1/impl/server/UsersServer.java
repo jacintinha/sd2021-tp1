@@ -42,6 +42,7 @@ public class UsersServer {
 
 		} catch (Exception e) {
 			Log.severe(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 

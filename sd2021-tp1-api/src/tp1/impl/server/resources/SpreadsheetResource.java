@@ -49,14 +49,19 @@ public class SpreadsheetResource implements RestSpreadsheets {
         }
 
         // TODO
-        User user = this.getUser(sheet.getOwner(), password);
+//        User user = this.getUser(sheet.getOwner(), password);
+//
+        if (this.getUser(sheet.getOwner(), password) != 200) {
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
 
         Log.info("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOG");
         // Check if password is correct, if not return HTTP BAD_REQUEST (400)
-        if (!user.getPassword().equals(password)) {
-            Log.info("Password is incorrect.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        }
+//        if (!user.getPassword().equals(password)) {
+//            Log.info("Password is incorrect.");
+//            throw new WebApplicationException(Status.BAD_REQUEST);
+//        }
+//
 
         // Generate UUID
         String uwuid = UUID.randomUUID().toString();
@@ -64,6 +69,8 @@ public class SpreadsheetResource implements RestSpreadsheets {
         sheet.setSheetURL(SpreadsheetServer.serverURI + uwuid);
         // Add the spreadsheet to the map of spreadsheets
         this.sheets.put(sheet.getSheetId(), sheet);
+
+        Log.info("I AM GENERATING UUID");
 
         return sheet.getSheetId();
     }
@@ -77,39 +84,52 @@ public class SpreadsheetResource implements RestSpreadsheets {
             Log.info("SheetId, userId or password null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
+
         Spreadsheet sheet = this.sheets.get(sheetId);
 
-        User user = this.getUser(userId, password);
+        if (this.getUser(userId, password) == 200) {
+            return sheet;
+        } else {
+            Log.info("I FAILED BECAUSE GET USER RETURNED FALSE");
+            return null;
+        }
+
         // Check if user exists, if not return HTTP NOT_FOUND (404)
-        if (user == null || sheet == null) {
-            Log.info("User or sheet does not exist.");
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
+//        if (user == null || sheet == null) {
+//            Log.info("User or sheet does not exist.");
+//            throw new WebApplicationException(Status.NOT_FOUND);
+//        }
+//
+//        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
+//        if (!user.getPassword().equals(password)) {
+//            Log.info("Password is incorrect.");
+//            throw new WebApplicationException(Status.FORBIDDEN);
+//        }
 
-        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-        if (!user.getPassword().equals(password)) {
-            Log.info("Password is incorrect.");
-            throw new WebApplicationException(Status.FORBIDDEN);
-        }
-
-        return sheet;
+//        return sheet;
     }
 
-    private User getUser(String userId, String password) {
-        URI[] knownUwis = Discovery.getInstance().knownUrisOf(UsersServer.SERVICE);
+    private int getUser(String userId, String password) {
+        Log.severe("Going for discovery");
 
-        Log.info("88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88w88");
-        for (int i = 0; i < knownUwis.length; i++)
-            Log.info(knownUwis[i].toString());
+        // TODO should be knowURISof("domain-1:users"); Discovery storing the wrong thing?
+        URI[] knownURIs = Discovery.getInstance().knownUrisOf(UsersServer.SERVICE);
+
+
+        Log.severe("Did discovery and length: " + knownURIs.length);
+
+        Log.severe("Printing KnownURIs:" + knownURIs.length);
+        for (URI knownUwi : knownURIs) Log.info(knownUwi.toString());
+
+        Log.info("TRYING TO CONTACT" + knownURIs[0]);
 
         try {
-            User uwu = GetUserClient.getUser(knownUwis[0].toString(), userId, password);
-            return uwu;
+            return GetUserClient.getUser(knownURIs[0].toString(), userId, password);
         } catch (IOException e) {
             // Do nothing
         }
 
-        return null;
+        return 400;
     }
 
     @Override
