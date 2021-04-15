@@ -36,8 +36,9 @@ public interface RestUsers {
 	 * @param userId   the userId of the user
 	 * @param password password of the user
 	 * @return 200 the user object, if the userId exists and password matches the
-	 *         existing password 403 if the password is incorrect 404 if no user
-	 *         exists with the provided userId
+	 *         existing password.
+	 *         403 if the password is incorrect.
+	 *         404 if no user exists with the provided userId
 	 */
 	@GET
 	@Path("/{userId}")

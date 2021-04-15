@@ -2,6 +2,7 @@ package tp1.impl.server.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.User;
@@ -33,46 +34,35 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) {
-		Log.info("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOG");
-
 		Log.info("createSpreadsheet : " + sheet);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
-        if (sheet == null || password == null) {
+        if (password == null || !checkSpreadsheet(sheet)) {
             Log.info("Spreadsheet object or password invalid.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        // Check if sheetId exists, if not return HTTP BAD_REQUEST (400)
-        if (this.sheets.containsKey(sheet.getSheetId())) {
-            Log.info("Spreadsheet already exists.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
-        }
-
-        // TODO
-//        User user = this.getUser(sheet.getOwner(), password);
-//
         if (this.getUser(sheet.getOwner(), password) != 200) {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        Log.info("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOG");
-        // Check if password is correct, if not return HTTP BAD_REQUEST (400)
-//        if (!user.getPassword().equals(password)) {
-//            Log.info("Password is incorrect.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
-//        }
-//
-
         // Generate UUID
-        String uwuid = UUID.randomUUID().toString();
-        sheet.setSheetId(uwuid);
-        sheet.setSheetURL(SpreadsheetServer.serverURI + uwuid);
+        String uuid = UUID.randomUUID().toString();
+        sheet.setSheetId(uuid);
+        sheet.setSheetURL(SpreadsheetServer.serverURI + uuid);
+
         // Add the spreadsheet to the map of spreadsheets
         this.sheets.put(sheet.getSheetId(), sheet);
 
-        Log.info("I AM GENERATING UUID");
-
         return sheet.getSheetId();
+    }
+
+    /**
+     * Auxiliary function to check the validity of a spreadsheet
+     * @param sheet - sheet to test
+     * @return true if sheet is valid, false otherwise
+     */
+    private boolean checkSpreadsheet(Spreadsheet sheet) {
+        return sheet != null && sheet.getRows() >= 0 && sheet.getColumns() >= 0 && sheet.getSheetId() == null && sheet.getSheetURL() == null && sheet.getSharedWith().size() == 0;
     }
 
     @Override
@@ -80,56 +70,50 @@ public class SpreadsheetResource implements RestSpreadsheets {
         Log.info("getSpreadsheet : sheet = " + sheetId + "; user = " + userId + "; pwd = " + password);
 
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
-        if (sheetId == null || userId == null || password == null) {
-            Log.info("SheetId, userId or password null.");
+        if (sheetId == null || userId == null) {
+            Log.info("SheetId, userId null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
         Spreadsheet sheet = this.sheets.get(sheetId);
 
-        if (this.getUser(userId, password) == 200) {
-            return sheet;
-        } else {
-            Log.info("I FAILED BECAUSE GET USER RETURNED FALSE");
-            return null;
+        if (sheet == null) {
+            throw new WebApplicationException(Status.NOT_FOUND);
         }
 
-        // Check if user exists, if not return HTTP NOT_FOUND (404)
-//        if (user == null || sheet == null) {
-//            Log.info("User or sheet does not exist.");
-//            throw new WebApplicationException(Status.NOT_FOUND);
-//        }
-//
-//        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-//        if (!user.getPassword().equals(password)) {
-//            Log.info("Password is incorrect.");
-//            throw new WebApplicationException(Status.FORBIDDEN);
-//        }
+        int userCode = this.getUser(userId, password);
 
-//        return sheet;
+        Log.severe("Got userCode: " + userCode);
+        // User exists
+        if (userCode == 200) {
+            // If user is owner
+            if (sheet.getOwner().equals(userId)) {
+                return sheet;
+            } else {
+                // If user is in shared
+                Set<String> sharedWith = sheet.getSharedWith();
+                String sharedUser = userId + "@" + SpreadsheetServer.domain;
+
+                if (sharedWith.contains(sharedUser)) {
+                    return sheet;
+                }
+
+                // Neither shared nor owner
+                throw new WebApplicationException(Status.FORBIDDEN);
+            }
+        } else {
+            throw new WebApplicationException(Status.fromStatusCode(userCode));
+        }
+
     }
 
     private int getUser(String userId, String password) {
-        Log.severe("Going for discovery");
 
-        // TODO should be knowURISof("domain-1:users"); Discovery storing the wrong thing?
-        URI[] knownURIs = Discovery.getInstance().knownUrisOf(UsersServer.SERVICE);
+        String serviceName = SpreadsheetServer.domain+":"+UsersServer.SERVICE;
 
+        URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-        Log.severe("Did discovery and length: " + knownURIs.length);
-
-        Log.severe("Printing KnownURIs:" + knownURIs.length);
-        for (URI knownUwi : knownURIs) Log.info(knownUwi.toString());
-
-        Log.info("TRYING TO CONTACT" + knownURIs[0]);
-
-        try {
-            return GetUserClient.getUser(knownURIs[0].toString(), userId, password);
-        } catch (IOException e) {
-            // Do nothing
-        }
-
-        return 400;
+        return GetUserClient.getUser(knownURIs[0].toString(), userId, password);
     }
 
     @Override
@@ -163,6 +147,34 @@ public class SpreadsheetResource implements RestSpreadsheets {
     }
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password) {
+        Log.info("updateCell : sheet = " + sheetId +
+                "; user = " + userId + "; pwd = " + password + "; cell = " + cell + "; rawValue " + rawValue);
+
+        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
+        if (sheetId == null || userId == null || rawValue == null || cell == null) {
+            Log.info("SheetId, userId null.");
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
+
+        Spreadsheet sheet = this.sheets.get(sheetId);
+
+        if (sheet == null) throw new WebApplicationException(Status.NOT_FOUND);
+
+        int userCode = this.getUser(userId, password);
+
+        // User exists and password was fine
+        if (userCode == 200) {
+            // If user is owner
+            if (sheet.getOwner().equals(userId))
+                sheet.setCellRawValue(cell, rawValue);
+            // If user is in shared
+            Set<String> sharedWith = sheet.getSharedWith();
+            String sharedUser = userId + "@" + SpreadsheetServer.domain;
+            if (sharedWith.contains(sharedUser))
+                sheet.setCellRawValue(cell, rawValue);
+        } else {
+            throw new WebApplicationException(userCode);
+        }
 
     }
 
@@ -240,32 +252,27 @@ public class SpreadsheetResource implements RestSpreadsheets {
         Log.info("deleteSpreadsheet : sheet = " + sheetId + "; pwd = " + password);
 
         // Check if data is valid, if not return HTTP CONFLICT (400)
-        if (sheetId == null || password == null) {
-            Log.info("UserId or password null.");
+        if (sheetId == null) {
+            Log.info("SheetId null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
         Spreadsheet sheet = this.sheets.get(sheetId);
-        // User user = getUser(sheet.getOwner(), password);
 
-        // if (user == null) {
-        // Log.info("User doesn't exist.");
-        // throw new WebApplicationException(Status.BAD_REQUEST);
-        // }
-
-        // Check if userId exists, if not return HTTP NOT_FOUND (404)
         if (sheet == null) {
             Log.info("Sheet doesn't exist.");
             throw new WebApplicationException(Status.NOT_FOUND);
         }
 
-        // Check if the password is correct, if not return HTTP FORBIDDEN (403)
-        // if (!user.getPassword().equals(password)) {
-        // Log.info("Password is incorrect.");
-        // throw new WebApplicationException(Status.FORBIDDEN);
-        // }
+        int userStatusCode = this.getUser(sheet.getOwner(), password);
 
-        this.sheets.remove(sheetId);
+        if (userStatusCode == 200) {
+            this.sheets.remove(sheetId);
+        } else if (userStatusCode == 403) {
+            throw new WebApplicationException(Status.FORBIDDEN);
+        } else {
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
     }
 
 }

@@ -48,6 +48,7 @@ public interface RestSpreadsheets {
 	@Path("/{sheetId}")
 	void deleteSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("password") String password);
 
+
 	/**
 	 * Retrieve a spreadsheet.
 	 *

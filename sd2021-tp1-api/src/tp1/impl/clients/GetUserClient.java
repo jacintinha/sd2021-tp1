@@ -22,8 +22,7 @@ public class GetUserClient {
 	public final static int CONNECTION_TIMEOUT = 1000;
 	public final static int REPLY_TIMEOUT = 600;
 
-	public static int getUser(String serverUrl, String userId, String password) throws IOException {
-//		serverUrl = "http://172.22.0.3:8080/rest";
+	public static int getUser(String serverUrl, String userId, String password) {
 		System.out.println("Sending request to server.");
 
 		ClientConfig config = new ClientConfig();
@@ -45,18 +44,21 @@ public class GetUserClient {
 				Response r = target.path(userId).queryParam("password", password).request()
 						.accept(MediaType.APPLICATION_JSON).get();
 
-				// TODO!!!!!!!!
-
-				if (r.getStatus() == Status.OK.getStatusCode() && r.hasEntity()) {
-//					System.out.println("Success:");
-//					User u = r.readEntity(User.class);
-//					System.out.println("User : " + u);
-					return r.getStatus();
-				} else
-					System.out.println("Error, HTTP error status: " + r.getStatus());
-
 				success = true;
 				return r.getStatus();
+
+//				// TODO!!!!!!!!
+//
+//				if (r.getStatus() == Status.OK.getStatusCode() && r.hasEntity()) {
+////					System.out.println("Success:");
+////					User u = r.readEntity(User.class);
+////					System.out.println("User : " + u);
+//					return r.getStatus();
+//				} else
+//					System.out.println("Error, HTTP error status: " + r.getStatus());
+//
+//				success = true;
+//				return r.getStatus();
 			} catch (ProcessingException pe) {
 				System.out.println("Timeout occurred");
 				pe.printStackTrace();

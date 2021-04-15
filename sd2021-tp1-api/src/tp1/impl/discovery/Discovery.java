@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * &lt;service-name-string&gt;&lt;delimiter-char&gt;&lt;service-uri-string&gt;
  * </p>
  */
-// TODO? @Singleton
+@Singleton
 public class Discovery {
 	private static final Logger Log = Logger.getLogger(Discovery.class.getName());
 
@@ -152,7 +152,6 @@ public class Discovery {
 		int counter = 0;
 
 		for (URIEntry elem : uriSet) {
-			Log.severe("ELEMENT: " + elem.getURI().toString());
 		    uris[counter++] = elem.getURI();
 		}
 
