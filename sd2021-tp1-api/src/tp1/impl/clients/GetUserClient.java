@@ -47,18 +47,6 @@ public class GetUserClient {
 				success = true;
 				return r.getStatus();
 
-//				// TODO!!!!!!!!
-//
-//				if (r.getStatus() == Status.OK.getStatusCode() && r.hasEntity()) {
-////					System.out.println("Success:");
-////					User u = r.readEntity(User.class);
-////					System.out.println("User : " + u);
-//					return r.getStatus();
-//				} else
-//					System.out.println("Error, HTTP error status: " + r.getStatus());
-//
-//				success = true;
-//				return r.getStatus();
 			} catch (ProcessingException pe) {
 				System.out.println("Timeout occurred");
 				pe.printStackTrace();
