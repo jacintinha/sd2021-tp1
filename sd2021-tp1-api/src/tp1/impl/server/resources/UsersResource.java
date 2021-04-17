@@ -11,10 +11,7 @@ import tp1.impl.server.SpreadsheetServer;
 import tp1.impl.server.UsersServer;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Singleton
@@ -164,21 +161,20 @@ public class UsersResource implements RestUsers {
         if (pattern == null) {
         	throw new WebApplicationException(Status.NOT_FOUND);
 		}
+        List<User> list;
+        Set<Map.Entry<String, User>> map;
+        synchronized (this) {
+            map = this.users.entrySet();
+        
+            list = new LinkedList<>();
 
-        // TODO synch?
-        if (pattern.equals("")) {
-            return new LinkedList<>(this.users.values());
-        } else {
-            List<User> list = new LinkedList<>();
-
-            for (Map.Entry<String, User> entry : this.users.entrySet()) {
+            for (Map.Entry<String, User> entry : map) {
                 if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
                     list.add(safeUser(entry.getValue()));
                 }
             }
-
-            return list;
         }
+        return list;
     }
 
     /**
