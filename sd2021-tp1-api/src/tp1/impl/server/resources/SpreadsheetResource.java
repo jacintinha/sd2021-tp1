@@ -2,10 +2,8 @@ package tp1.impl.server.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
-import tp1.api.User;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.impl.clients.GetUserClient;
@@ -14,18 +12,15 @@ import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.SpreadsheetServer;
 import tp1.impl.server.UsersServer;
 
-import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Singleton
 public class SpreadsheetResource implements RestSpreadsheets {
 
     private final Map<String, Spreadsheet> sheets = new HashMap<>();
+    private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
 
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
 
@@ -34,7 +29,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) {
-		Log.info("createSpreadsheet : " + sheet);
+        Log.info("createSpreadsheet : " + sheet);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (password == null || !checkSpreadsheet(sheet)) {
             Log.info("Spreadsheet object or password invalid.");
@@ -48,18 +43,27 @@ public class SpreadsheetResource implements RestSpreadsheets {
         // Generate UUID
         String uuid = UUID.randomUUID().toString();
         sheet.setSheetId(uuid);
-        sheet.setSheetURL(SpreadsheetServer.serverURI + uuid);
-
-        Log.severe(sheet.getSheetURL());
+        sheet.setSheetURL(SpreadsheetServer.serverURI + "/spreadsheets/" + uuid);
 
         // Add the spreadsheet to the map of spreadsheets
         this.sheets.put(sheet.getSheetId(), sheet);
+
+        Set<String> ownersSheets = sheetsByOwner.get(sheet.getOwner());
+
+        if (ownersSheets == null) {
+            ownersSheets = new HashSet<String>();
+        }
+
+        ownersSheets.add(sheet.getSheetId());
+
+        this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
 
         return sheet.getSheetId();
     }
 
     /**
      * Auxiliary function to check the validity of a spreadsheet
+     *
      * @param sheet - sheet to test
      * @return true if sheet is valid, false otherwise
      */
@@ -111,8 +115,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
     }
 
     private int getUser(String userId, String password, String domain) {
-
-        String serviceName = domain+":"+UsersServer.SERVICE;
+        String serviceName = domain + ":" + UsersServer.SERVICE;
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
@@ -121,32 +124,52 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
     @Override
     public String[][] getSpreadsheetValues(String sheetId, String userId, String password) {
-        // Check if user the sheet and the password are valid, if not return HTTP
-        // BAD_REQUEST (400)
+        // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null || password == null) {
             Log.info("SheetId, userId or password null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
-        Spreadsheet sheet = this.sheets.get(sheetId);
-        // User user = getUser(userId, password);
 
-        // Check if user or spreadsheet exists, if not return HTTP NOT_FOUND (404)
-        // if(user == null || sheet == null) {
-        // Log.info("User or sheet does not exist.");
-        // throw new WebApplicationException(Status.NOT_FOUND);
-        // }
+            Spreadsheet sheet = this.sheets.get(sheetId);
 
-        // Check if the user is either the owner or in the shared list and if password
-        // is correct, if not return HTTP FORBIDDEN (403)
-        /*
-         * if(!sheet.getOwner().equals(userId) ||
-         * !sheet.getSharedWith().contains(userId) ||
-         * !user.getPassword().equals(password)) { Log.
-         * info("The spreadsheet is not shared with the user, the user is not the owner or the password is incorrect."
-         * ); throw new WebApplicationException(Status.FORBIDDEN); }
-         */
-        // TODO
-        return SpreadsheetEngineImpl.getInstance().computeSpreadsheetValues((AbstractSpreadsheet) sheet);
+            if (sheet == null) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+
+            int userStatusCode = getUser(userId, password, SpreadsheetServer.domain);
+
+            if (userStatusCode != 200) {
+                throw new WebApplicationException(Status.fromStatusCode(userStatusCode));
+            }
+
+            Set<String> sharedWith = sheet.getSharedWith();
+
+            String userSharedWith = userId + "@" + SpreadsheetServer.domain;
+
+            if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
+                throw new WebApplicationException(Status.FORBIDDEN);
+            }
+
+            return SpreadsheetEngineImpl.getInstance().
+                    computeSpreadsheetValues( new AbstractSpreadsheet() {
+                        public int rows() { return sheet.getRows();}
+                        public int columns() { return sheet.getColumns();}
+                        public String sheetId() { return sheet.getSheetId(); }
+                        public String cellRawValue(int row, int col) {
+                            try {
+                                return sheet.getRawValues()[row][col];
+                            } catch( IndexOutOfBoundsException e) {
+                                return "#ERR?";
+                            }
+                        }
+                        public String[][] getRangeValues(String sheetURL, String range) {
+                            // get the range from the given sheetURL
+                            // need to get data that might be in a different server
+                            return null;
+                        }
+                    });
+
+
     }
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password) {
@@ -155,7 +178,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null || rawValue == null || cell == null) {
-            Log.info("SheetId, userId null.");
+            Log.info("SheetId, userId, rawValue or cell is null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
@@ -199,13 +222,13 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
 
-         // Check if owner exists, if not return HTTP NOT_FOUND (404)
-         if(ownerStatusCode != 200) {
+        // Check if owner exists, if not return HTTP NOT_FOUND (404)
+        if (ownerStatusCode != 200) {
             Log.info("User does not exist or password is incorrect.");
             throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
-         }
+        }
 
-        String[] elems =  userId.split("@");
+        String[] elems = userId.split("@");
 
         String newUserId = elems[0];
         String newUserDomain = elems[1];
@@ -245,12 +268,12 @@ public class SpreadsheetResource implements RestSpreadsheets {
         int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
 
         // Check if owner exists, if not return HTTP NOT_FOUND (404)
-        if(ownerStatusCode != 200) {
+        if (ownerStatusCode != 200) {
             Log.info("User does not exist or password is incorrect.");
             throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
         }
 
-        String[] elems =  userId.split("@");
+        String[] elems = userId.split("@");
 
         String newUserId = elems[0];
         String newUserDomain = elems[1];
@@ -292,6 +315,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         if (userStatusCode == 200) {
             this.sheets.remove(sheetId);
+            this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
         } else if (userStatusCode == 403) {
             throw new WebApplicationException(Status.FORBIDDEN);
         } else {
