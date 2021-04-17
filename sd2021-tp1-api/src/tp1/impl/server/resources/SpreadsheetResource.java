@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
-import tp1.impl.clients.GetUserClient;
+import tp1.impl.clients.Mediator;
 import tp1.impl.discovery.Discovery;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.SpreadsheetServer;
@@ -119,7 +119,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-        return GetUserClient.getUser(knownURIs[0].toString(), userId, password);
+        return Mediator.getUser(knownURIs[0].toString(), userId, password);
     }
 
     @Override
@@ -292,6 +292,33 @@ public class SpreadsheetResource implements RestSpreadsheets {
         }
 
         sheet.setSharedWith(shared);
+    }
+
+    @Override
+    public void deleteUserSpreadsheets(String userId, String password) {
+        Log.info("deleteUserSpreadsheets : user = " + userId + "; pwd = " + password);
+
+        // Check if data is valid, if not return HTTP CONFLICT (400)
+        if (userId == null) {
+            Log.info("UserId null.");
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
+
+        int userStatusCode = this.getUser(userId, password, SpreadsheetServer.domain);
+
+        if (userStatusCode == 200) {
+            Set<String> usersSheets = this.sheetsByOwner.get(userId);
+
+            for (String sheetId: usersSheets) {
+                this.sheets.remove(sheetId);
+            }
+
+            this.sheetsByOwner.remove(userId);
+        } else if (userStatusCode == 403) {
+            throw new WebApplicationException(Status.FORBIDDEN);
+        } else {
+            throw new WebApplicationException(Status.BAD_REQUEST);
+        }
     }
 
     @Override

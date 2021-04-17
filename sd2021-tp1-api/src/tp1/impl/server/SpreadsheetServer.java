@@ -5,12 +5,14 @@ import java.net.URI;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import jakarta.inject.Singleton;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import tp1.impl.discovery.Discovery;
 import tp1.impl.server.resources.SpreadsheetResource;
 
+@Singleton
 public class SpreadsheetServer {
 
 	private static final Logger Log = Logger.getLogger(SpreadsheetServer.class.getName());

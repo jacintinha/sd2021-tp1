@@ -1,5 +1,6 @@
 package tp1.impl.server.resources;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,6 +12,9 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
 import tp1.api.service.rest.RestUsers;
+import tp1.impl.clients.Mediator;
+import tp1.impl.discovery.Discovery;
+import tp1.impl.server.SpreadsheetServer;
 
 @Singleton
 public class UsersResource implements RestUsers {
@@ -138,8 +142,16 @@ public class UsersResource implements RestUsers {
 		}
 
 		// TODO wipe spreadsheets
+//		deleteSpreadsheets(userId, password);
 
 		return user;
+	}
+
+	private int deleteSpreadsheets (String userId, String password) {
+		String serviceName = SpreadsheetServer.domain + ":" + SpreadsheetServer.SERVICE;
+		URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
+
+		return Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
 	}
 
 	@Override
