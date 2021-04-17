@@ -69,7 +69,7 @@ public class Mediator {
 		config.property(ClientProperties.READ_TIMEOUT, REPLY_TIMEOUT);
 		Client client = ClientBuilder.newClient(config);
 
-		WebTarget target = client.target(serverUrl).path(RestSpreadsheets.PATH + "/import");
+		WebTarget target = client.target(serverUrl).path("/import");
 
 		short retries = 0;
 		boolean success = false;
@@ -77,14 +77,11 @@ public class Mediator {
 		while (!success && retries < MAX_RETRIES) {
 
 			try {
-                System.out.println("UWUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUWWWWWWWWWW");
-				Response r = target.path(sheetId).queryParam("userId", userId).queryParam("range", range).request()
+			    Response r = target.queryParam("userId", userId).queryParam("range", range).request()
                         .accept(MediaType.APPLICATION_JSON).get();
-                System.out.println("UWUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUWWWWWWWWWW");
+
                 if( r.getStatus() == 200 && r.hasEntity() ) {
-                    System.out.println("ESTOU AQUI, AQUIIIIIII");
                     String[][] ass = r.readEntity(String[][].class);
-                    System.out.println("APARECES?");
                     return ass;
                 } else
                     System.out.println("Error, HTTP error status: " + r.getStatus() );

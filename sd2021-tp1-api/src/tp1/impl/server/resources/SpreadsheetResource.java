@@ -129,16 +129,11 @@ public class SpreadsheetResource implements RestSpreadsheets {
         Spreadsheet referencedSheet = this.sheets.get(sheetId);
 
         if (referencedSheet == null) {
-            Log.severe("No sheet bruh");
-//            throw new WebApplicationException(Status.NOT_FOUND);
             return null;
         }
-
         if (referencedSheet.getSharedWith().contains(userId)) {
-            Log.severe("Pus um dentro deste if tambem");
             return this.getSheetRangeValues(referencedSheet, range);
         }
-//        throw new WebApplicationException(Status.FORBIDDEN);
         return null;
 
 
@@ -146,7 +141,6 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
         CellRange cellRange = new CellRange(range);
-        Log.severe("Extracting " + range);
         return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
     }
 
@@ -213,12 +207,6 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
                         String owner = sheet.getOwner()+"@"+SpreadsheetServer.domain;
 
-                        Log.severe("BOLD TO THE EYES: Owner: " + owner);
-
-                        Log.severe("URI"+ SpreadsheetServer.serverURI);
-
-                        Log.severe("SHEET URL" + sheetURL);
-
                         if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
                             // Intra-domain
                             try {
@@ -229,8 +217,6 @@ public class SpreadsheetResource implements RestSpreadsheets {
                             }
                         }
                         // Inter-domain
-                        Log.severe("Gonna call Mediator with sheetId: " + sheetId);
-
                         return Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
 
                         // need to get data that might be in a different server

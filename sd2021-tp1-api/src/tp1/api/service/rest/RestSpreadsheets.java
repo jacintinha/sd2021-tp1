@@ -81,7 +81,7 @@ public interface RestSpreadsheets {
 	 *		   400, otherwise
 	 */
 	@GET
-	@Path("/import/{sheetId}")
+	@Path("{sheetId}/import/")
 	@Produces(MediaType.APPLICATION_JSON)
 	String[][] importValues(@PathParam("sheetId") String sheetId,
 									@QueryParam("userId") String userId, @QueryParam("range") String range);
