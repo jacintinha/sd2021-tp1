@@ -72,8 +72,9 @@ public interface RestUsers {
 	 * @param nauserId the userId of the user
 	 * @param password password of the user
 	 * @return 200 the deleted user object, if the name exists and pwd matches the
-	 *         existing password 403 if the password is incorrect 404 if no user
-	 *         exists with the provided userId
+	 *         existing password.
+	 *         403 if the password is incorrect.
+	 *         404 if no user exists with the provided userId
 	 */
 	@DELETE
 	@Path("/{userId}")
@@ -87,7 +88,8 @@ public interface RestUsers {
 	 *
 	 * @param pattern substring to search
 	 * @return 200 when the search was successful, regardless of the number of hits
-	 *         (including 0 hits). 400 otherwise.
+	 *         (including 0 hits).
+	 *         400 otherwise.
 	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

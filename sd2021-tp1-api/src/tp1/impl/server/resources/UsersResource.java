@@ -181,12 +181,15 @@ public class UsersResource implements RestUsers {
     public List<User> searchUsers(String pattern) {
         Log.info("searchUsers : pattern = " + pattern);
 
-        // TODO synch?
-
         if (pattern == null) {
-            return new LinkedList<User>(this.users.values());
+        	throw new WebApplicationException(Status.NOT_FOUND);
+		}
+
+        // TODO synch?
+        if (pattern.equals("")) {
+            return new LinkedList<>(this.users.values());
         } else {
-            List<User> list = new LinkedList<User>();
+            List<User> list = new LinkedList<>();
 
             for (Map.Entry<String, User> entry : this.users.entrySet()) {
                 if (entry.getValue().getFullName().toLowerCase().contains(pattern.toLowerCase())) {
