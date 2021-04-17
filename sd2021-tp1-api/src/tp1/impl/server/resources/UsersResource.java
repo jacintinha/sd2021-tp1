@@ -142,39 +142,19 @@ public class UsersResource implements RestUsers {
             this.users.remove(userId);
         }
 
-        // TODO wipe spreadsheets
-//		deleteSpreadsheets(userId, password);
-
-        Log.severe("Gonna try to get a spreadsheet");
-
-        int sc = deleteSpreadsheets(userId, password);
-
-        Log.severe("Got: " + sc);
+        deleteSpreadsheets(userId, password);
 
         return user;
     }
 
-//	/**
-//	 * TODO TESTER FUNCTION, DELETE
-//	 * @param userId
-//	 * @param password
-//	 * @return
-//	 */
-//	private int getSpreadsheet (String userId, String password) {
-//		String serviceName = UsersServer.domain + ":" + SpreadsheetServer.SERVICE;
-//		Log.severe("Gonna use Discovery on " + serviceName);
-//		URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
-//		Log.severe("Trying to contact: "+  knownURIs[0].toString());
-//
-//		return Mediator.getSpreadsheet(knownURIs[0].toString(), "", userId, password);
-//
-//	}
+    private void deleteSpreadsheets(String userId, String password) {
+        new Thread(() -> {
+            // TODO
+            String serviceName = UsersServer.domain + ":" + SpreadsheetServer.SERVICE;
+            URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-    private int deleteSpreadsheets(String userId, String password) {
-        String serviceName = UsersServer.domain + ":" + SpreadsheetServer.SERVICE;
-        URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
-
-        return Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
+            Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
+        }).start();
     }
 
     @Override

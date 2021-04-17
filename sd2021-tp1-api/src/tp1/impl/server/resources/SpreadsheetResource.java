@@ -11,6 +11,7 @@ import tp1.impl.discovery.Discovery;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.SpreadsheetServer;
 import tp1.impl.server.UsersServer;
+import tp1.util.CellRange;
 
 import java.net.URI;
 import java.util.*;
@@ -123,9 +124,36 @@ public class SpreadsheetResource implements RestSpreadsheets {
     }
 
     @Override
+    public String[][] importValues(String sheetId, String userId, String range) {
+
+        Spreadsheet referencedSheet = this.sheets.get(sheetId);
+
+        if (referencedSheet == null) {
+            Log.severe("No sheet bruh");
+//            throw new WebApplicationException(Status.NOT_FOUND);
+            return null;
+        }
+
+        if (referencedSheet.getSharedWith().contains(userId)) {
+            Log.severe("Pus um dentro deste if tambem");
+            return this.getSheetRangeValues(referencedSheet, range);
+        }
+//        throw new WebApplicationException(Status.FORBIDDEN);
+        return null;
+
+
+    }
+
+    private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
+        CellRange cellRange = new CellRange(range);
+        Log.severe("Extracting " + range);
+        return cellRange.extractRangeValuesFrom(sheet.getRawValues());
+    }
+
+    @Override
     public String[][] getSpreadsheetValues(String sheetId, String userId, String password) {
         // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
-        if (sheetId == null || userId == null || password == null) {
+        if (sheetId == null || userId == null /*|| password == null*/) {
             Log.info("SheetId, userId or password null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
@@ -174,8 +202,33 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
                     public String[][] getRangeValues(String sheetURL, String range) {
                         // get the range from the given sheetURL
+                        String[] elems = sheetURL.split("/");
+                        String sheetId = elems[elems.length-1];
+
+                        String owner = sheet.getOwner()+"@"+SpreadsheetServer.domain;
+
+                        Log.severe("BOLD TO THE EYES: Owner: " + owner);
+
+                        Log.severe("URI"+ SpreadsheetServer.serverURI);
+
+                        Log.severe("SHEET URL" + sheetURL);
+
+                        if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
+                            // Intra-domain
+                            try {
+                            return importValues(sheetId, owner, range);
+
+                            } catch(Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        // Inter-domain
+                        Log.severe("Gonna call Mediator with sheetId: " + sheetId);
+
+                        return Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+
                         // need to get data that might be in a different server
-                        return null;
+//                        return null;
                     }
                 });
 
