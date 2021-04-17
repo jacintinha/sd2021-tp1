@@ -152,10 +152,8 @@ public interface RestSpreadsheets {
 	 * @param userId - the user whose sheets will be deleted.
 	 * @param password - the password of the owner of the spreadsheets.
 	 *	TODO
-	 * @return 204 if the sheet was successful.
-	 *			404 if no sheet exists with the given sheetId.
-	 *          403 if the password is incorrect.
-	 *			400 otherwise.
+	 * @return 204 if the sheets deletion was successful.
+	 * 		   400, otherwise.
 	 */
 	@DELETE
 	@Path("/delete/{userId}")

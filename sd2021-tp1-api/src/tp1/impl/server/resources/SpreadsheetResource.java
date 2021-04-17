@@ -130,44 +130,54 @@ public class SpreadsheetResource implements RestSpreadsheets {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-            Spreadsheet sheet = this.sheets.get(sheetId);
+        Spreadsheet sheet = this.sheets.get(sheetId);
 
-            if (sheet == null) {
-                throw new WebApplicationException(Status.NOT_FOUND);
-            }
+        if (sheet == null) {
+            throw new WebApplicationException(Status.NOT_FOUND);
+        }
 
-            int userStatusCode = getUser(userId, password, SpreadsheetServer.domain);
+        int userStatusCode = getUser(userId, password, SpreadsheetServer.domain);
 
-            if (userStatusCode != 200) {
-                throw new WebApplicationException(Status.fromStatusCode(userStatusCode));
-            }
+        if (userStatusCode != 200) {
+            throw new WebApplicationException(Status.fromStatusCode(userStatusCode));
+        }
 
-            Set<String> sharedWith = sheet.getSharedWith();
+        Set<String> sharedWith = sheet.getSharedWith();
 
-            String userSharedWith = userId + "@" + SpreadsheetServer.domain;
+        String userSharedWith = userId + "@" + SpreadsheetServer.domain;
 
-            if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
-                throw new WebApplicationException(Status.FORBIDDEN);
-            }
+        if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
+            throw new WebApplicationException(Status.FORBIDDEN);
+        }
 
-            return SpreadsheetEngineImpl.getInstance().
-                    computeSpreadsheetValues( new AbstractSpreadsheet() {
-                        public int rows() { return sheet.getRows();}
-                        public int columns() { return sheet.getColumns();}
-                        public String sheetId() { return sheet.getSheetId(); }
-                        public String cellRawValue(int row, int col) {
-                            try {
-                                return sheet.getRawValues()[row][col];
-                            } catch( IndexOutOfBoundsException e) {
-                                return "#ERR?";
-                            }
+        return SpreadsheetEngineImpl.getInstance().
+                computeSpreadsheetValues(new AbstractSpreadsheet() {
+                    public int rows() {
+                        return sheet.getRows();
+                    }
+
+                    public int columns() {
+                        return sheet.getColumns();
+                    }
+
+                    public String sheetId() {
+                        return sheet.getSheetId();
+                    }
+
+                    public String cellRawValue(int row, int col) {
+                        try {
+                            return sheet.getRawValues()[row][col];
+                        } catch (IndexOutOfBoundsException e) {
+                            return "#ERR?";
                         }
-                        public String[][] getRangeValues(String sheetURL, String range) {
-                            // get the range from the given sheetURL
-                            // need to get data that might be in a different server
-                            return null;
-                        }
-                    });
+                    }
+
+                    public String[][] getRangeValues(String sheetURL, String range) {
+                        // get the range from the given sheetURL
+                        // need to get data that might be in a different server
+                        return null;
+                    }
+                });
 
 
     }
@@ -306,16 +316,14 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         int userStatusCode = this.getUser(userId, password, SpreadsheetServer.domain);
 
-        if (userStatusCode == 200) {
+        if (userStatusCode == 404) {
             Set<String> usersSheets = this.sheetsByOwner.get(userId);
 
-            for (String sheetId: usersSheets) {
+            for (String sheetId : usersSheets) {
                 this.sheets.remove(sheetId);
             }
 
             this.sheetsByOwner.remove(userId);
-        } else if (userStatusCode == 403) {
-            throw new WebApplicationException(Status.FORBIDDEN);
         } else {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
