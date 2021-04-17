@@ -147,7 +147,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
         CellRange cellRange = new CellRange(range);
         Log.severe("Extracting " + range);
-        return cellRange.extractRangeValuesFrom(sheet.getRawValues());
+        return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
     }
 
     @Override
@@ -178,6 +178,12 @@ public class SpreadsheetResource implements RestSpreadsheets {
             throw new WebApplicationException(Status.FORBIDDEN);
         }
 
+        return calculateSpreadsheetValues(sheet);
+
+
+    }
+
+    private String[][] calculateSpreadsheetValues(Spreadsheet sheet) {
         return SpreadsheetEngineImpl.getInstance().
                 computeSpreadsheetValues(new AbstractSpreadsheet() {
                     public int rows() {
@@ -216,7 +222,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
                         if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
                             // Intra-domain
                             try {
-                            return importValues(sheetId, owner, range);
+                                    return importValues(sheetId, owner, range);
 
                             } catch(Exception e) {
                                 e.printStackTrace();
@@ -231,8 +237,6 @@ public class SpreadsheetResource implements RestSpreadsheets {
 //                        return null;
                     }
                 });
-
-
     }
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password) {
