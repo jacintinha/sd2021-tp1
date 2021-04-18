@@ -47,18 +47,19 @@ public class SpreadsheetResource implements RestSpreadsheets {
         sheet.setSheetURL(SpreadsheetServer.serverURI + "/spreadsheets/" + uuid);
 
         // Add the spreadsheet to the map of spreadsheets
-        this.sheets.put(sheet.getSheetId(), sheet);
+        synchronized (this) {
+            this.sheets.put(sheet.getSheetId(), sheet);
 
-        Set<String> ownersSheets = sheetsByOwner.get(sheet.getOwner());
+            Set<String> ownersSheets = sheetsByOwner.get(sheet.getOwner());
 
-        if (ownersSheets == null) {
-            ownersSheets = new HashSet<String>();
+            if (ownersSheets == null) {
+                ownersSheets = new HashSet<String>();
+            }
+
+            ownersSheets.add(sheet.getSheetId());
+
+            this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
         }
-
-        ownersSheets.add(sheet.getSheetId());
-
-        this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
-
         return sheet.getSheetId();
     }
 
@@ -81,13 +82,13 @@ public class SpreadsheetResource implements RestSpreadsheets {
             Log.info("SheetId, userId null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
-
-        Spreadsheet sheet = this.sheets.get(sheetId);
-
-        if (sheet == null) {
-            throw new WebApplicationException(Status.NOT_FOUND);
+        Spreadsheet sheet;
+        synchronized (this) {
+            sheet = this.sheets.get(sheetId);
+            if (sheet == null) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
         }
-
         // Same domain only
         int userCode = this.getUser(userId, password, SpreadsheetServer.domain);
 
@@ -126,13 +127,16 @@ public class SpreadsheetResource implements RestSpreadsheets {
     @Override
     public String[][] importValues(String sheetId, String userId, String range) {
 
-        Spreadsheet referencedSheet = this.sheets.get(sheetId);
+        Spreadsheet referencedSheet;
 
-        if (referencedSheet == null) {
-            return null;
-        }
-        if (referencedSheet.getSharedWith().contains(userId)) {
-            return this.getSheetRangeValues(referencedSheet, range);
+        synchronized (this) {
+            referencedSheet = this.sheets.get(sheetId);
+            if (referencedSheet == null) {
+                return null;
+            }
+            if (referencedSheet.getSharedWith().contains(userId)) {
+                return this.getSheetRangeValues(referencedSheet, range);
+            }
         }
         return null;
 
@@ -152,28 +156,30 @@ public class SpreadsheetResource implements RestSpreadsheets {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        Spreadsheet sheet = this.sheets.get(sheetId);
-
-        if (sheet == null) {
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
         int userStatusCode = getUser(userId, password, SpreadsheetServer.domain);
 
         if (userStatusCode != 200) {
             throw new WebApplicationException(Status.fromStatusCode(userStatusCode));
         }
+        Spreadsheet sheet;
+        synchronized (this) {
 
-        Set<String> sharedWith = sheet.getSharedWith();
+            sheet = this.sheets.get(sheetId);
 
-        String userSharedWith = userId + "@" + SpreadsheetServer.domain;
+            if (sheet == null) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+            Set<String> sharedWith = sheet.getSharedWith();
 
-        if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
-            throw new WebApplicationException(Status.FORBIDDEN);
+
+            String userSharedWith = userId + "@" + SpreadsheetServer.domain;
+
+            if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
+                throw new WebApplicationException(Status.FORBIDDEN);
+            }
+
         }
-
         return calculateSpreadsheetValues(sheet);
-
 
     }
 
@@ -235,22 +241,25 @@ public class SpreadsheetResource implements RestSpreadsheets {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        Spreadsheet sheet = this.sheets.get(sheetId);
-
-        if (sheet == null) throw new WebApplicationException(Status.NOT_FOUND);
-
         int userCode = this.getUser(userId, password, SpreadsheetServer.domain);
 
         // User exists and password was fine
         if (userCode == 200) {
-            // If user is owner
-            if (sheet.getOwner().equals(userId))
-                sheet.setCellRawValue(cell, rawValue);
-            // If user is in shared
-            Set<String> sharedWith = sheet.getSharedWith();
-            String sharedUser = userId + "@" + SpreadsheetServer.domain;
-            if (sharedWith.contains(sharedUser))
-                sheet.setCellRawValue(cell, rawValue);
+            Spreadsheet sheet;
+            synchronized (this) {
+                sheet = this.sheets.get(sheetId);
+
+                if (sheet == null) throw new WebApplicationException(Status.NOT_FOUND);
+
+                // If user is owner
+                if (sheet.getOwner().equals(userId))
+                    sheet.setCellRawValue(cell, rawValue);
+                // If user is in shared
+                Set<String> sharedWith = sheet.getSharedWith();
+                String sharedUser = userId + "@" + SpreadsheetServer.domain;
+                if (sharedWith.contains(sharedUser))
+                    sheet.setCellRawValue(cell, rawValue);
+            }
         } else {
             throw new WebApplicationException(Status.fromStatusCode(userCode));
         }
@@ -266,42 +275,43 @@ public class SpreadsheetResource implements RestSpreadsheets {
             Log.info("SheetId, userId null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
+        synchronized (this) {
+            Spreadsheet sheet = this.sheets.get(sheetId);
 
-        Spreadsheet sheet = this.sheets.get(sheetId);
+            if (sheet == null) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
 
-        if (sheet == null) {
-            throw new WebApplicationException(Status.NOT_FOUND);
+            int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
+
+            // Check if owner exists, if not return HTTP NOT_FOUND (404)
+            if (ownerStatusCode != 200) {
+                Log.info("User does not exist or password is incorrect.");
+                throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
+            }
+
+            String[] elems = userId.split("@");
+
+            String newUserId = elems[0];
+            String newUserDomain = elems[1];
+
+            int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
+
+            if (newUserStatusCode == 404) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+
+            Set<String> shared = sheet.getSharedWith();
+
+            // Check if the sheet is already shared with the user, if so return HTTP CONFLICT (409)
+            if (shared.contains(userId)) {
+                Log.info("Sheet has already been shared with the user");
+                throw new WebApplicationException(Status.CONFLICT);
+            }
+
+            shared.add(userId);
+            sheet.setSharedWith(shared);
         }
-
-        int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
-
-        // Check if owner exists, if not return HTTP NOT_FOUND (404)
-        if (ownerStatusCode != 200) {
-            Log.info("User does not exist or password is incorrect.");
-            throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
-        }
-
-        String[] elems = userId.split("@");
-
-        String newUserId = elems[0];
-        String newUserDomain = elems[1];
-
-        int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
-
-        if (newUserStatusCode == 404) {
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
-        Set<String> shared = sheet.getSharedWith();
-
-        // Check if the sheet is already shared with the user, if so return HTTP CONFLICT (409)
-        if (shared.contains(userId)) {
-            Log.info("Sheet has already been shared with the user");
-            throw new WebApplicationException(Status.CONFLICT);
-        }
-
-        shared.add(userId);
-        sheet.setSharedWith(shared);
     }
 
     @Override
@@ -312,39 +322,41 @@ public class SpreadsheetResource implements RestSpreadsheets {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
 
-        Spreadsheet sheet = this.sheets.get(sheetId);
+        synchronized (this) {
+            Spreadsheet sheet = this.sheets.get(sheetId);
 
-        if (sheet == null) {
-            throw new WebApplicationException(Status.NOT_FOUND);
+            if (sheet == null) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+
+            int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
+
+            // Check if owner exists, if not return HTTP NOT_FOUND (404)
+            if (ownerStatusCode != 200) {
+                Log.info("User does not exist or password is incorrect.");
+                throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
+            }
+
+            String[] elems = userId.split("@");
+
+            String newUserId = elems[0];
+            String newUserDomain = elems[1];
+
+            int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
+
+            if (newUserStatusCode == 404) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+
+            Set<String> shared = sheet.getSharedWith();
+            boolean exists = shared.remove(userId);
+
+            if (!exists) {
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
+
+            sheet.setSharedWith(shared);
         }
-
-        int ownerStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
-
-        // Check if owner exists, if not return HTTP NOT_FOUND (404)
-        if (ownerStatusCode != 200) {
-            Log.info("User does not exist or password is incorrect.");
-            throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
-        }
-
-        String[] elems = userId.split("@");
-
-        String newUserId = elems[0];
-        String newUserDomain = elems[1];
-
-        int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
-
-        if (newUserStatusCode == 404) {
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
-        Set<String> shared = sheet.getSharedWith();
-        boolean exists = shared.remove(userId);
-
-        if (!exists) {
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
-
-        sheet.setSharedWith(shared);
     }
 
     @Override
@@ -360,13 +372,15 @@ public class SpreadsheetResource implements RestSpreadsheets {
         int userStatusCode = this.getUser(userId, password, SpreadsheetServer.domain);
 
         if (userStatusCode == 404) {
-            Set<String> usersSheets = this.sheetsByOwner.get(userId);
+            synchronized (this) {
+                Set<String> usersSheets = this.sheetsByOwner.get(userId);
 
-            for (String sheetId : usersSheets) {
-                this.sheets.remove(sheetId);
+                for (String sheetId : usersSheets) {
+                    this.sheets.remove(sheetId);
+                }
+
+                this.sheetsByOwner.remove(userId);
             }
-
-            this.sheetsByOwner.remove(userId);
         } else {
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
@@ -381,23 +395,24 @@ public class SpreadsheetResource implements RestSpreadsheets {
             Log.info("SheetId null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
+        synchronized (this) {
+            Spreadsheet sheet = this.sheets.get(sheetId);
 
-        Spreadsheet sheet = this.sheets.get(sheetId);
+            if (sheet == null) {
+                Log.info("Sheet doesn't exist.");
+                throw new WebApplicationException(Status.NOT_FOUND);
+            }
 
-        if (sheet == null) {
-            Log.info("Sheet doesn't exist.");
-            throw new WebApplicationException(Status.NOT_FOUND);
-        }
+            int userStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
 
-        int userStatusCode = this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain);
-
-        if (userStatusCode == 200) {
-            this.sheets.remove(sheetId);
-            this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
-        } else if (userStatusCode == 403) {
-            throw new WebApplicationException(Status.FORBIDDEN);
-        } else {
-            throw new WebApplicationException(Status.BAD_REQUEST);
+            if (userStatusCode == 200) {
+                this.sheets.remove(sheetId);
+                this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
+            } else if (userStatusCode == 403) {
+                throw new WebApplicationException(Status.FORBIDDEN);
+            } else {
+                throw new WebApplicationException(Status.BAD_REQUEST);
+            }
         }
     }
 

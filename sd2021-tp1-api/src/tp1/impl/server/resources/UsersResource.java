@@ -165,7 +165,7 @@ public class UsersResource implements RestUsers {
         Set<Map.Entry<String, User>> map;
         synchronized (this) {
             map = this.users.entrySet();
-        
+
             list = new LinkedList<>();
 
             for (Map.Entry<String, User> entry : map) {
