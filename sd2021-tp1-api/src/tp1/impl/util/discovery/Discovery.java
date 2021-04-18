@@ -1,4 +1,4 @@
-package tp1.impl.discovery;
+package tp1.impl.util.discovery;
 
 import jakarta.inject.Singleton;
 

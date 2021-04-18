@@ -1,18 +1,20 @@
-package tp1.impl.server;
+package tp1.impl.server.rest;
 
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.logging.Logger;
 
+import jakarta.inject.Singleton;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
-import tp1.impl.discovery.Discovery;
-import tp1.impl.server.resources.UsersResource;
+import tp1.impl.util.discovery.Discovery;
+import tp1.impl.server.rest.resources.SpreadsheetResource;
 
-public class UsersServer {
+@Singleton
+public class SpreadsheetServer {
 
-	private static final Logger Log = Logger.getLogger(UsersServer.class.getName());
+	private static final Logger Log = Logger.getLogger(SpreadsheetServer.class.getName());
 
 	static {
 		System.setProperty("java.net.preferIPv4Stack", "true");
@@ -20,19 +22,20 @@ public class UsersServer {
 	}
 
 	public static final int PORT = 8080;
-	public static final String SERVICE = "users";
+	public static final String SERVICE = "sheets";
+	public static String serverURI = "";
 	public static String domain = "";
 
 	public static void main(String[] args) {
 		try {
 			String ip = InetAddress.getLocalHost().getHostAddress();
 
-			ResourceConfig config = new ResourceConfig();
-			config.register(UsersResource.class);
-
 			domain = args[0];
 
-			String serverURI = String.format("http://%s:%s/rest", ip, PORT);
+			ResourceConfig config = new ResourceConfig();
+			config.register(SpreadsheetResource.class);
+
+			serverURI = String.format("http://%s:%s/rest", ip, PORT);
 			JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config);
 
 			Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
@@ -42,8 +45,6 @@ public class UsersServer {
 
 		} catch (Exception e) {
 			Log.severe(e.getMessage());
-			e.printStackTrace();
 		}
 	}
-
 }

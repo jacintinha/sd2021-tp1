@@ -1,14 +1,14 @@
-package tp1.impl.server.resources;
+package tp1.impl.server.rest.resources;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
 import tp1.api.service.rest.RestUsers;
-import tp1.impl.clients.Mediator;
-import tp1.impl.discovery.Discovery;
-import tp1.impl.server.SpreadsheetServer;
-import tp1.impl.server.UsersServer;
+import tp1.impl.util.Mediator;
+import tp1.impl.util.discovery.Discovery;
+import tp1.impl.server.rest.SpreadsheetServer;
+import tp1.impl.server.rest.UsersServer;
 
 import java.net.URI;
 import java.util.*;
