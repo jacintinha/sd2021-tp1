@@ -5,10 +5,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
 import tp1.api.service.rest.RestUsers;
-import tp1.impl.util.Mediator;
-import tp1.impl.util.discovery.Discovery;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.server.rest.UsersServer;
+import tp1.impl.util.Mediator;
+import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
 import java.util.*;
@@ -159,8 +159,8 @@ public class UsersResource implements RestUsers {
         Log.info("searchUsers : pattern = " + pattern);
 
         if (pattern == null) {
-        	throw new WebApplicationException(Status.NOT_FOUND);
-		}
+            throw new WebApplicationException(Status.NOT_FOUND);
+        }
         List<User> list;
         Set<Map.Entry<String, User>> map;
         synchronized (this) {

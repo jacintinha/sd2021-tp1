@@ -6,7 +6,6 @@ import tp1.api.service.soap.SoapUsers;
 import tp1.api.service.soap.UsersException;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.server.rest.UsersServer;
-import tp1.impl.server.rest.resources.UsersResource;
 import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
 
@@ -14,13 +13,13 @@ import java.net.URI;
 import java.util.*;
 import java.util.logging.Logger;
 
-@WebService(serviceName=SoapUsers.NAME,
-        targetNamespace=SoapUsers.NAMESPACE,
-        endpointInterface= SoapUsers.INTERFACE)
+@WebService(serviceName = SoapUsers.NAME,
+        targetNamespace = SoapUsers.NAMESPACE,
+        endpointInterface = SoapUsers.INTERFACE)
 public class UsersWS implements SoapUsers {
     private final Map<String, User> users = new HashMap<>();
 
-    private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
+    private static final Logger Log = Logger.getLogger(UsersWS.class.getName());
 
     public UsersWS() {
     }

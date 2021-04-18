@@ -6,11 +6,11 @@ import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
-import tp1.impl.util.Mediator;
-import tp1.impl.util.discovery.Discovery;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.server.rest.UsersServer;
+import tp1.impl.util.Mediator;
+import tp1.impl.util.discovery.Discovery;
 import tp1.util.CellRange;
 
 import java.net.URI;
@@ -88,30 +88,30 @@ public class SpreadsheetResource implements RestSpreadsheets {
             if (sheet == null) {
                 throw new WebApplicationException(Status.NOT_FOUND);
             }
-        }
-        // Same domain only
-        int userCode = this.getUser(userId, password, SpreadsheetServer.domain);
+            // Same domain only
+            int userCode = this.getUser(userId, password, SpreadsheetServer.domain);
 
-        // User exists
-        if (userCode == 200) {
-            // If user is owner
-            if (sheet.getOwner().equals(userId)) {
-                return sheet;
-            } else {
-                // If user is in shared
-                Set<String> sharedWith = sheet.getSharedWith();
-                String sharedUser = userId + "@" + SpreadsheetServer.domain;
-
-                if (sharedWith.contains(sharedUser)) {
+            // User exists
+            if (userCode == 200) {
+                // If user is owner
+                if (sheet.getOwner().equals(userId)) {
                     return sheet;
-                }
+                } else {
+                    // If user is in shared
+                    Set<String> sharedWith = sheet.getSharedWith();
+                    String sharedUser = userId + "@" + SpreadsheetServer.domain;
 
-                // TODO, not specified? but passes test
-                // Neither shared nor owner
-                throw new WebApplicationException(Status.FORBIDDEN);
+                    if (sharedWith.contains(sharedUser)) {
+                        return sheet;
+                    }
+
+                    // TODO, not specified? but passes test
+                    // Neither shared nor owner
+                    throw new WebApplicationException(Status.FORBIDDEN);
+                }
+            } else {
+                throw new WebApplicationException(Status.fromStatusCode(userCode));
             }
-        } else {
-            throw new WebApplicationException(Status.fromStatusCode(userCode));
         }
 
     }
@@ -209,16 +209,16 @@ public class SpreadsheetResource implements RestSpreadsheets {
                     public String[][] getRangeValues(String sheetURL, String range) {
                         // get the range from the given sheetURL
                         String[] elems = sheetURL.split("/");
-                        String sheetId = elems[elems.length-1];
+                        String sheetId = elems[elems.length - 1];
 
-                        String owner = sheet.getOwner()+"@"+SpreadsheetServer.domain;
+                        String owner = sheet.getOwner() + "@" + SpreadsheetServer.domain;
 
                         if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
                             // Intra-domain
                             try {
-                                    return importValues(sheetId, owner, range);
+                                return importValues(sheetId, owner, range);
 
-                            } catch(Exception e) {
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }

@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 public class UsersServer {
 
-    private static Logger Log = Logger.getLogger(UsersServer.class.getName());
+    private static final Logger Log = Logger.getLogger(UsersServer.class.getName());
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -20,12 +20,14 @@ public class UsersServer {
     }
 
     public static final int PORT = 8080;
-    public static final String SERVICE = "UsersService";
+    public static final String SERVICE = "users";
     public static final String SOAP_USERS_PATH = "/soap/users";
     public static String domain = "";
 
     public static void main(String[] args) {
         try {
+            domain = args[0];
+
             String ip = InetAddress.getLocalHost().getHostAddress();
             String serverURI = String.format("http://%s:%s/soap", ip, PORT);
 
@@ -36,15 +38,14 @@ public class UsersServer {
             Endpoint soapUsersEndpoint = Endpoint.create(new UsersWS());
 
             soapUsersEndpoint.publish(server.createContext(SOAP_USERS_PATH));
-            domain = args[0];
             server.start();
 
-            Log.info(String.format("%s Server ready @ %s\n",  SERVICE, serverURI));
+            Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
 
             //More code can be executed here...
             Discovery.getInstance().start(domain, Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
 
-        } catch( Exception e) {
+        } catch (Exception e) {
             Log.severe(e.getMessage());
         }
     }

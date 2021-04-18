@@ -8,10 +8,10 @@ package tp1.api.engine;
  */
 public interface SpreadsheetEngine {
 
-	/**
-	 * @param sheet - The spreadsheet whose cells will be used to compute the values
-	 * @return the full "matrix" of cell values.
-	 */
-	public String[][] computeSpreadsheetValues( AbstractSpreadsheet sheet );
+    /**
+     * @param sheet - The spreadsheet whose cells will be used to compute the values
+     * @return the full "matrix" of cell values.
+     */
+    String[][] computeSpreadsheetValues(AbstractSpreadsheet sheet);
 
 }

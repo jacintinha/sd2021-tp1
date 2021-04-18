@@ -5,13 +5,13 @@ import jakarta.xml.ws.WebFault;
 @WebFault
 public class SheetsException extends Exception {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	public SheetsException() {
-		super("");
-	}
+    public SheetsException() {
+        super("");
+    }
 
-	public SheetsException(String errorMessage ) {
-		super(errorMessage);
-	}
+    public SheetsException(String errorMessage) {
+        super(errorMessage);
+    }
 }

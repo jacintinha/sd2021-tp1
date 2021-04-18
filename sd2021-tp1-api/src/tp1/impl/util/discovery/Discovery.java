@@ -3,12 +3,7 @@ package tp1.impl.util.discovery;
 import jakarta.inject.Singleton;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.net.URI;
+import java.net.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,125 +32,125 @@ import java.util.logging.Logger;
  */
 @Singleton
 public class Discovery {
-	private static final Logger Log = Logger.getLogger(Discovery.class.getName());
+    private static final Logger Log = Logger.getLogger(Discovery.class.getName());
 
-	private static Discovery instance;
+    private static Discovery instance;
 
-	static {
-		// addresses some multicast issues on some TCP/IP stacks
-		System.setProperty("java.net.preferIPv4Stack", "true");
-		// summarizes the logging format
-		System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
-	}
+    static {
+        // addresses some multicast issues on some TCP/IP stacks
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        // summarizes the logging format
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
+    }
 
-	// The pre-agreed multicast endpoint assigned to perform discovery.
-	public static final InetSocketAddress DISCOVERY_ADDR = new InetSocketAddress("226.226.226.226", 2266);
-	static final int DISCOVERY_PERIOD = 1000;
-	static final int DISCOVERY_TIMEOUT = 5000;
+    // The pre-agreed multicast endpoint assigned to perform discovery.
+    public static final InetSocketAddress DISCOVERY_ADDR = new InetSocketAddress("226.226.226.226", 2266);
+    static final int DISCOVERY_PERIOD = 1000;
+    static final int DISCOVERY_TIMEOUT = 5000;
 
-	// Used separate the two fields that make up a service announcement.
-	private static final String DELIMITER = "\t";
+    // Used separate the two fields that make up a service announcement.
+    private static final String DELIMITER = "\t";
 
-//	private InetSocketAddress addr;
+    //	private InetSocketAddress addr;
 //	private String serviceName;
 //	private String serviceURI;
-	private final Map<String, Set<URIEntry>> knownURIs;
+    private final Map<String, Set<URIEntry>> knownURIs;
 
-	public static Discovery getInstance() {
-		if (instance == null) {
-			instance = new Discovery();
-		}
+    public static Discovery getInstance() {
+        if (instance == null) {
+            instance = new Discovery();
+        }
 
-		return instance;
-	}
+        return instance;
+    }
 
-	public Discovery() {
-		this.knownURIs = new HashMap<>();
-	}
+    public Discovery() {
+        this.knownURIs = new HashMap<>();
+    }
 
-	/**
-	 * Starts sending service announcements at regular intervals...
-	 */
-	public void start(String domain, InetSocketAddress addr, String serviceName, String serviceURI) {
-		Log.info(String.format("Starting Discovery announcements on: %s for: %s -> %s", addr, serviceName, serviceURI));
+    /**
+     * Starts sending service announcements at regular intervals...
+     */
+    public void start(String domain, InetSocketAddress addr, String serviceName, String serviceURI) {
+        Log.info(String.format("Starting Discovery announcements on: %s for: %s -> %s", addr, serviceName, serviceURI));
 
-		byte[] announceBytes = String.format(domain+":%s%s%s", serviceName, DELIMITER, serviceURI).getBytes();
-		DatagramPacket announcePkt = new DatagramPacket(announceBytes, announceBytes.length, addr);
+        byte[] announceBytes = String.format(domain + ":%s%s%s", serviceName, DELIMITER, serviceURI).getBytes();
+        DatagramPacket announcePkt = new DatagramPacket(announceBytes, announceBytes.length, addr);
 
-		try {
-			MulticastSocket ms = new MulticastSocket(addr.getPort());
-			ms.joinGroup(addr, NetworkInterface.getByInetAddress(InetAddress.getLocalHost()));
-			// start thread to send periodic announcements
-			new Thread(() -> {
-				for (;;) {
-					try {
-						ms.send(announcePkt);
-						Thread.sleep(DISCOVERY_PERIOD);
-					} catch (Exception e) {
-						e.printStackTrace();
-						// do nothing
-					}
-				}
-			}).start();
+        try {
+            MulticastSocket ms = new MulticastSocket(addr.getPort());
+            ms.joinGroup(addr, NetworkInterface.getByInetAddress(InetAddress.getLocalHost()));
+            // start thread to send periodic announcements
+            new Thread(() -> {
+                for (; ; ) {
+                    try {
+                        ms.send(announcePkt);
+                        Thread.sleep(DISCOVERY_PERIOD);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // do nothing
+                    }
+                }
+            }).start();
 
-			// start thread to collect announcements
-			new Thread(() -> {
-				DatagramPacket pkt = new DatagramPacket(new byte[1024], 1024);
-				for (;;) {
-					try {
-						pkt.setLength(1024);
-						ms.receive(pkt);
-						String msg = new String(pkt.getData(), 0, pkt.getLength());
-						String[] msgElems = msg.split(DELIMITER);
-						if (msgElems.length == 2) { // periodic announcement
-							System.out.printf("FROM %s (%s) : %s\n", pkt.getAddress().getCanonicalHostName(),
-									pkt.getAddress().getHostAddress(), msg);
+            // start thread to collect announcements
+            new Thread(() -> {
+                DatagramPacket pkt = new DatagramPacket(new byte[1024], 1024);
+                for (; ; ) {
+                    try {
+                        pkt.setLength(1024);
+                        ms.receive(pkt);
+                        String msg = new String(pkt.getData(), 0, pkt.getLength());
+                        String[] msgElems = msg.split(DELIMITER);
+                        if (msgElems.length == 2) { // periodic announcement
+                            System.out.printf("FROM %s (%s) : %s\n", pkt.getAddress().getCanonicalHostName(),
+                                    pkt.getAddress().getHostAddress(), msg);
 
-							String rcvServiceName = msgElems[0];
-							String rcvServiceURI = msgElems[1];
-							URIEntry newEntry = new URIEntry(rcvServiceURI);
+                            String rcvServiceName = msgElems[0];
+                            String rcvServiceURI = msgElems[1];
+                            URIEntry newEntry = new URIEntry(rcvServiceURI);
 
-							Set<URIEntry> uriSet = this.knownURIs.get(rcvServiceName);
+                            Set<URIEntry> uriSet = this.knownURIs.get(rcvServiceName);
 
-							if (uriSet == null)
-								uriSet = new HashSet<>();
+                            if (uriSet == null)
+                                uriSet = new HashSet<>();
 
-							// Remove and add will simulate a put() operation
-							// The point is to update the timestamp
-							uriSet.remove(newEntry);
-							uriSet.add(newEntry);
+                            // Remove and add will simulate a put() operation
+                            // The point is to update the timestamp
+                            uriSet.remove(newEntry);
+                            uriSet.add(newEntry);
 
-							this.knownURIs.put(rcvServiceName, uriSet);
-						}
-					} catch (IOException e) {
-						// do nothing
-					}
-				}
-			}).start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+                            this.knownURIs.put(rcvServiceName, uriSet);
+                        }
+                    } catch (IOException e) {
+                        // do nothing
+                    }
+                }
+            }).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	/**
-	 * Returns the known servers for a service.
-	 *
-	 * @param serviceName the name of the service being discovered
-	 * @return an array of URI with the service instances discovered.
-	 */
-	public URI[] knownUrisOf(String serviceName) {
-		Set<URIEntry> uriSet = this.knownURIs.get(serviceName);
+    /**
+     * Returns the known servers for a service.
+     *
+     * @param serviceName the name of the service being discovered
+     * @return an array of URI with the service instances discovered.
+     */
+    public URI[] knownUrisOf(String serviceName) {
+        Set<URIEntry> uriSet = this.knownURIs.get(serviceName);
 
-		if (uriSet == null) return null;
+        if (uriSet == null) return null;
 
-		URI[] uris = new URI[uriSet.size()];
-		int counter = 0;
+        URI[] uris = new URI[uriSet.size()];
+        int counter = 0;
 
-		for (URIEntry elem : uriSet) {
-		    uris[counter++] = elem.getURI();
-		}
+        for (URIEntry elem : uriSet) {
+            uris[counter++] = elem.getURI();
+        }
 
-		return uris;
-	}
+        return uris;
+    }
 
 }

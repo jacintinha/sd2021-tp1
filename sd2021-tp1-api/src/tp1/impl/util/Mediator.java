@@ -58,52 +58,52 @@ public class Mediator {
         return 500;
     }
 
-	public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
-		System.out.println("Sending request to server. RENGE");
+    public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
+        System.out.println("Sending request to server. RENGE");
 
-		ClientConfig config = new ClientConfig();
-		// how much time until we timeout when opening the TCP connection to the server
-		config.property(ClientProperties.CONNECT_TIMEOUT, CONNECTION_TIMEOUT);
-		// how much time do we wait for the reply of the server after sending the
-		// request
-		config.property(ClientProperties.READ_TIMEOUT, REPLY_TIMEOUT);
-		Client client = ClientBuilder.newClient(config);
+        ClientConfig config = new ClientConfig();
+        // how much time until we timeout when opening the TCP connection to the server
+        config.property(ClientProperties.CONNECT_TIMEOUT, CONNECTION_TIMEOUT);
+        // how much time do we wait for the reply of the server after sending the
+        // request
+        config.property(ClientProperties.READ_TIMEOUT, REPLY_TIMEOUT);
+        Client client = ClientBuilder.newClient(config);
 
-		WebTarget target = client.target(serverUrl).path("/import");
+        WebTarget target = client.target(serverUrl).path("/import");
 
-		short retries = 0;
-		boolean success = false;
+        short retries = 0;
+        boolean success = false;
 
-		while (!success && retries < MAX_RETRIES) {
+        while (!success && retries < MAX_RETRIES) {
 
-			try {
-			    Response r = target.queryParam("userId", userId).queryParam("range", range).request()
+            try {
+                Response r = target.queryParam("userId", userId).queryParam("range", range).request()
                         .accept(MediaType.APPLICATION_JSON).get();
 
-                if( r.getStatus() == 200 && r.hasEntity() ) {
+                if (r.getStatus() == 200 && r.hasEntity()) {
                     String[][] ass = r.readEntity(String[][].class);
                     return ass;
                 } else
-                    System.out.println("Error, HTTP error status: " + r.getStatus() );
+                    System.out.println("Error, HTTP error status: " + r.getStatus());
 
-				success = true;
+                success = true;
 //				return r.getStatus();
 
-			} catch (ProcessingException pe) {
-				System.out.println("Timeout occurred");
-				pe.printStackTrace();
-				retries++;
-				try {
-					Thread.sleep(RETRY_PERIOD);
-				} catch (InterruptedException e) {
-					// nothing to be done here, if this happens we will just retry sooner.
-				}
-				System.out.println("Retrying to execute request.");
-			}
-		}
-		return null;
+            } catch (ProcessingException pe) {
+                System.out.println("Timeout occurred");
+                pe.printStackTrace();
+                retries++;
+                try {
+                    Thread.sleep(RETRY_PERIOD);
+                } catch (InterruptedException e) {
+                    // nothing to be done here, if this happens we will just retry sooner.
+                }
+                System.out.println("Retrying to execute request.");
+            }
+        }
+        return null;
 //		return 500;
-	}
+    }
 
     public static int deleteSpreadsheets(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
