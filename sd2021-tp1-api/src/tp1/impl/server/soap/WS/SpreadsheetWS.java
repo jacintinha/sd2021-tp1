@@ -8,7 +8,6 @@ import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.soap.SpreadsheetServer;
 import tp1.impl.server.soap.UsersServer;
-import tp1.impl.util.Mediator;
 import tp1.impl.util.MediatorSoap;
 import tp1.impl.util.discovery.Discovery;
 import tp1.util.CellRange;
@@ -175,7 +174,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
             String userSharedWith = userId + "@" + SpreadsheetServer.domain;
 
-            if (sharedWith == null || !(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
+            if (!userId.equals(sheet.getOwner()) && (sharedWith == null || !sharedWith.contains(userSharedWith))) {
                 throw new SheetsException("User has no permission");
             }
 
@@ -223,7 +222,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
                     }
                 }
                 // Inter-domain
-                return Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+                return MediatorSoap.getSpreadsheetRange(sheetURL, owner, sheetId, range);
 
                 // need to get data that might be in a different server
                 // return null;

@@ -59,7 +59,7 @@ public class Mediator {
     }
 
     public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
-        System.out.println("Sending request to server. RENGE");
+        System.out.println("Sending request to server.");
 
         ClientConfig config = new ClientConfig();
         // how much time until we timeout when opening the TCP connection to the server
@@ -81,8 +81,7 @@ public class Mediator {
                         .accept(MediaType.APPLICATION_JSON).get();
 
                 if (r.getStatus() == 200 && r.hasEntity()) {
-                    String[][] ass = r.readEntity(String[][].class);
-                    return ass;
+                    return r.readEntity(String[][].class);
                 } else
                     System.out.println("Error, HTTP error status: " + r.getStatus());
 

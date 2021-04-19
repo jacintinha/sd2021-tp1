@@ -4,9 +4,9 @@ import jakarta.jws.WebService;
 import tp1.api.User;
 import tp1.api.service.soap.SoapUsers;
 import tp1.api.service.soap.UsersException;
-import tp1.impl.server.rest.SpreadsheetServer;
-import tp1.impl.server.rest.UsersServer;
-import tp1.impl.util.Mediator;
+import tp1.impl.server.soap.SpreadsheetServer;
+import tp1.impl.server.soap.UsersServer;
+import tp1.impl.util.MediatorSoap;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
@@ -66,12 +66,12 @@ public class UsersWS implements SoapUsers {
             // Check if user exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
                 Log.info("User does not exist.");
-                throw new UsersException("User does not exist.");
+                throw new UsersException("404");
             }
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!user.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-                throw new UsersException("Password is incorrect.");
+                throw new UsersException("403");
             }
         }
 
@@ -150,7 +150,7 @@ public class UsersWS implements SoapUsers {
             String serviceName = UsersServer.domain + ":" + SpreadsheetServer.SERVICE;
             URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-            Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
+            MediatorSoap.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
         }).start();
     }
 
