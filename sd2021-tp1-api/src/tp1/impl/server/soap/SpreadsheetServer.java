@@ -21,13 +21,12 @@ public class SpreadsheetServer {
 
     public static final int PORT = 8080;
     public static final String SERVICE = "sheets";
-    public static final String SOAP_SPREADSHEETS_PATH = "/soap/sheets";
+    public static final String SOAP_SPREADSHEETS_PATH = "/soap/spreadsheets";
     public static String serverURI = "";
     public static String domain = "";
 
     public static void main(String[] args) {
         try {
-
             domain = args[0];
 
             Log.severe("Domain " + domain);

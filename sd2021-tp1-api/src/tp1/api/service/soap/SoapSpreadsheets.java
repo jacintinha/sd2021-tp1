@@ -1,5 +1,6 @@
 package tp1.api.service.soap;
 
+import jakarta.jws.WebMethod;
 import jakarta.jws.WebService;
 import tp1.api.Spreadsheet;
 
@@ -17,6 +18,7 @@ public interface SoapSpreadsheets {
      * @param password - the password of the owner of the spreadsheet.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     String createSpreadsheet(Spreadsheet sheet, String password) throws SheetsException;
 
 
@@ -27,6 +29,7 @@ public interface SoapSpreadsheets {
      * @param password - the password of the owner of the spreadsheet.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     void deleteSpreadsheet(String sheetId, String password) throws SheetsException;
 
     /**
@@ -37,6 +40,7 @@ public interface SoapSpreadsheets {
      * @param password - The password of the user performing the operation.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws SheetsException;
 
 
@@ -48,6 +52,7 @@ public interface SoapSpreadsheets {
      * @param password - The password of the owner of the spreadsheet.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     void shareSpreadsheet(String sheetId, String userId, String password) throws SheetsException;
 
 
@@ -59,6 +64,7 @@ public interface SoapSpreadsheets {
      * @param password - The password of the owner of the spreadsheet.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     void unshareSpreadsheet(String sheetId, String userId, String password) throws SheetsException;
 
 
@@ -72,6 +78,7 @@ public interface SoapSpreadsheets {
      * @param password - the password of the owner of the spreadsheet
      * @throws SheetsException otherwise
      **/
+    @WebMethod
     void updateCell(String sheetId, String cell, String rawValue, String userId, String password) throws SheetsException;
 
 
@@ -84,6 +91,7 @@ public interface SoapSpreadsheets {
      * @param range   - The range to import.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     String[][] importValues(String sheetId, String userId, String range) throws SheetsException;
 
 
@@ -95,6 +103,7 @@ public interface SoapSpreadsheets {
      * @param password - the password of the owner of the spreadsheet
      * @throws SheetsException otherwise
      */
+    @WebMethod
     String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws SheetsException;
 
     /**
@@ -104,6 +113,7 @@ public interface SoapSpreadsheets {
      * @param password - the password of the owner of the spreadsheets.
      * @throws SheetsException otherwise
      */
+    @WebMethod
     void deleteUserSpreadsheets(String userId, String password) throws SheetsException;
 
 }

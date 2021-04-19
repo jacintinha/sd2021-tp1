@@ -29,12 +29,11 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) throws SheetsException {
-
             Log.info("createSpreadsheet : " + sheet);
             // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
             if (password == null || !checkSpreadsheet(sheet)) {
                 Log.info("Spreadsheet object or password invalid.");
-                throw new SheetsException("Spreadsheet object invalid");
+                throw new SheetsException("Spreadsheet object invalid -------------------------------------------------");
             }
 
             if (this.getUser(sheet.getOwner(), password, SpreadsheetServer.domain) != 200) {
@@ -61,9 +60,6 @@ public class SpreadsheetWS implements SoapSpreadsheets {
                 this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
             }
             return sheet.getSheetId();
-
-
-
     }
 
     /**
@@ -74,7 +70,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
      */
     private boolean checkSpreadsheet(Spreadsheet sheet) {
         return sheet != null && sheet.getRows() >= 0 && sheet.getColumns() >= 0 && sheet.getSheetId() == null
-                && sheet.getSheetURL() == null && sheet.getSharedWith().size() == 0;
+                && sheet.getSheetURL() == null;
     }
 
     @Override
@@ -107,7 +103,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
                     Set<String> sharedWith = sheet.getSharedWith();
                     String sharedUser = userId + "@" + SpreadsheetServer.domain;
 
-                    if (sharedWith.contains(sharedUser)) {
+                    if (sharedWith != null && sharedWith.contains(sharedUser)) {
                         return sheet;
                     }
 
@@ -140,8 +136,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
             if (referencedSheet == null) {
                 return null;
             }
-
-            if (referencedSheet.getSharedWith().contains(userId)) {
+            Set<String> shared = referencedSheet.getSharedWith();
+            if (shared != null && shared.contains(userId)) {
                 return this.getSheetRangeValues(referencedSheet, range);
             }
         }
@@ -179,7 +175,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
             String userSharedWith = userId + "@" + SpreadsheetServer.domain;
 
-            if (!(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
+            if (sharedWith == null || !(sharedWith.contains(userSharedWith) || userId.equals(sheet.getOwner()))) {
                 throw new SheetsException("User has no permission");
             }
 
@@ -263,7 +259,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
                 // If user is in shared
                 Set<String> sharedWith = sheet.getSharedWith();
                 String sharedUser = userId + "@" + SpreadsheetServer.domain;
-                if (sharedWith.contains(sharedUser))
+                if (sharedWith != null && sharedWith.contains(sharedUser))
                     sheet.setCellRawValue(cell, rawValue);
             }
         } else {
@@ -309,9 +305,10 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
             Set<String> shared = sheet.getSharedWith();
 
-            // Check if the sheet is already shared with the user, if so return HTTP
-            // CONFLICT (409)
-            if (shared.contains(userId)) {
+            // SOAP complains if this is omitted
+            if (shared == null) {
+                shared = new HashSet<>();
+            } else if (shared.contains(userId)) {
                 Log.info("Sheet has already been shared with the user");
                 throw new SheetsException("Sheet has already been shared with the user");
             }
@@ -358,6 +355,10 @@ public class SpreadsheetWS implements SoapSpreadsheets {
             }
 
             Set<String> shared = sheet.getSharedWith();
+
+            // SOAP complains if this is omitted
+            if (shared == null) throw new SheetsException("NullPointerException");
+
             boolean exists = shared.remove(userId);
 
             if (!exists) {
