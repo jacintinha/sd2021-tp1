@@ -1,7 +1,6 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
@@ -15,7 +14,6 @@ import tp1.util.CellRange;
 
 import java.net.URI;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 @Singleton
@@ -59,17 +57,18 @@ public class SpreadsheetResource implements Spreadsheets {
         synchronized (this) {
             this.sheets.put(sheet.getSheetId(), sheet);
 
-            Set<String> ownersSheets = sheetsByOwner.get(sheet.getOwner());
+            Set<String> ownersSheets = this.sheetsByOwner.get(sheet.getOwner());
 
             if (ownersSheets == null) {
-                ownersSheets = new HashSet<String>();
+                ownersSheets = new HashSet<>();
             }
 
             ownersSheets.add(sheet.getSheetId());
 
             this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
+
+            return Result.ok(sheet.getSheetId());
         }
-        return Result.ok(sheet.getSheetId());
     }
 
     /**
@@ -93,8 +92,8 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
-
         // Could check if sheet exists here
+
         // Same domain only
         int userCode = this.getUser(userId, password, this.domain);
 
@@ -171,8 +170,11 @@ public class SpreadsheetResource implements Spreadsheets {
      * @return extracted range of values
      */
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
-        CellRange cellRange = new CellRange(range);
-        return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
+        // TODO
+        synchronized (sheet) {
+            CellRange cellRange = new CellRange(range);
+            return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
+        }
     }
 
     @Override
@@ -344,8 +346,9 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
 
-        synchronized (this) { // TODO sheet (?)
+        synchronized (this) { // TODO sheet (?) Yes
             // If sheet still exists
+            sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -403,7 +406,7 @@ public class SpreadsheetResource implements Spreadsheets {
         }
 
         synchronized (this) { //TODO sheet (?)
-
+            sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -476,6 +479,7 @@ public class SpreadsheetResource implements Spreadsheets {
         int userStatusCode = this.getUser(owner, password, this.domain);
 
         synchronized (this) {
+            sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
                 return Result.error(Result.ErrorCode.NOT_FOUND);

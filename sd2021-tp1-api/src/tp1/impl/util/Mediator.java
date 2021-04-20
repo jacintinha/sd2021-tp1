@@ -53,8 +53,8 @@ public class Mediator {
 
         try {
             QName QNAME = new QName(SoapUsers.NAMESPACE, SoapUsers.NAME);
-            Service service = Service.create( new URL(serverUrl + USERS_WSDL), QNAME);
-            users = service.getPort( SoapUsers.class );
+            Service service = Service.create(new URL(serverUrl + USERS_WSDL), QNAME);
+            users = service.getPort(SoapUsers.class);
         } catch (WebServiceException | MalformedURLException e) {
             System.err.println("Could not contact the server: " + e.getMessage());
             System.exit(1);
@@ -71,8 +71,8 @@ public class Mediator {
         SoapSpreadsheets spreadsheets = null;
         try {
             QName QNAME = new QName(SoapSpreadsheets.NAMESPACE, SoapSpreadsheets.NAME);
-            Service service = Service.create( new URL(serverUrl + SPREADSHEETS_WSDL), QNAME);
-            spreadsheets = service.getPort( SoapSpreadsheets.class );
+            Service service = Service.create(new URL(serverUrl + SPREADSHEETS_WSDL), QNAME);
+            spreadsheets = service.getPort(SoapSpreadsheets.class);
         } catch (WebServiceException | MalformedURLException e) {
             System.err.println("Could not contact the server: " + e.getMessage());
             System.exit(1);
@@ -84,9 +84,9 @@ public class Mediator {
         return spreadsheets;
     }
 
-    public static int getUser(String serverUrl, String userId, String password){
+    public static int getUser(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
-        if(serverUrl.contains("/rest")){
+        if (serverUrl.contains("/rest")) {
             return getUserRest(restSetUp(serverUrl, RestUsers.PATH), userId, password);
         }
         return getUserSoap(soapSetUp(serverUrl), userId, password);
@@ -127,7 +127,7 @@ public class Mediator {
         short retries = 0;
         boolean success = false;
 
-        while(!success && retries < MAX_RETRIES) {
+        while (!success && retries < MAX_RETRIES) {
 
             try {
                 User u = users.getUser(userId, password);
@@ -144,7 +144,9 @@ public class Mediator {
                 System.out.println("Communication error.");
                 wse.printStackTrace();
                 retries++;
-                try { Thread.sleep( RETRY_PERIOD ); } catch (InterruptedException e) {
+                try {
+                    Thread.sleep(RETRY_PERIOD);
+                } catch (InterruptedException e) {
                     //nothing to be done here, if this happens we will just retry sooner.
                 }
                 System.out.println("Retrying to execute request.");
@@ -155,7 +157,7 @@ public class Mediator {
 
     public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
         System.out.println("Sending request to server.");
-        if(serverUrl.contains("/rest")){
+        if (serverUrl.contains("/rest")) {
             return getSpreadsheetRangeRest(restSetUp(serverUrl, "/import"), userId, range);
         }
         return getSpreadsheetRangeSoap(soapSetUpSheets(serverUrl), userId, sheetId, range);
@@ -183,7 +185,7 @@ public class Mediator {
                 pe.printStackTrace();
                 retries++;
                 try {
-                    Thread.sleep(RETRY_PERIOD/100);
+                    Thread.sleep(RETRY_PERIOD / 100);
                 } catch (InterruptedException e) {
                     // nothing to be done here, if this happens we will just retry sooner.
                 }
@@ -198,7 +200,7 @@ public class Mediator {
         short retries = 0;
         boolean success = false;
 
-        while(!success && retries < MAX_RETRIES) {
+        while (!success && retries < MAX_RETRIES) {
 
             try {
                 String[][] values = spreadsheets.importValues(sheetId, userId, range);
@@ -213,7 +215,9 @@ public class Mediator {
                 System.out.println("Communication error.");
                 wse.printStackTrace();
                 retries++;
-                try { Thread.sleep( RETRY_PERIOD ); } catch (InterruptedException e) {
+                try {
+                    Thread.sleep(RETRY_PERIOD);
+                } catch (InterruptedException e) {
                     //nothing to be done here, if this happens we will just retry sooner.
                 }
                 System.out.println("Retrying to execute request.");
@@ -224,13 +228,13 @@ public class Mediator {
 
     public static int deleteSpreadsheets(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
-        if(serverUrl.contains("/rest")){
+        if (serverUrl.contains("/rest")) {
             return deleteSpreadsheetsRest(restSetUp(serverUrl, RestSpreadsheets.PATH + "/delete"), userId, password);
         }
         return deleteSpreadsheetsSoap(soapSetUpSheets(serverUrl), userId, password);
     }
 
-    public static int deleteSpreadsheetsRest (WebTarget target, String userId, String password) {
+    public static int deleteSpreadsheetsRest(WebTarget target, String userId, String password) {
         System.out.println("Sending request to server.");
         short retries = 0;
         boolean success = false;
@@ -258,12 +262,12 @@ public class Mediator {
         return 500;
     }
 
-    public static int deleteSpreadsheetsSoap (SoapSpreadsheets spreadsheets, String userId, String password) {
+    public static int deleteSpreadsheetsSoap(SoapSpreadsheets spreadsheets, String userId, String password) {
         System.out.println("Sending request to server.");
         short retries = 0;
         boolean success = false;
 
-        while(!success && retries < 100) {
+        while (!success && retries < 100) {
 
             try {
                 spreadsheets.deleteUserSpreadsheets(userId, password);
@@ -279,7 +283,9 @@ public class Mediator {
                 System.out.println("Communication error.");
                 wse.printStackTrace();
                 retries++;
-                try { Thread.sleep( RETRY_PERIOD ); } catch (InterruptedException e) {
+                try {
+                    Thread.sleep(RETRY_PERIOD);
+                } catch (InterruptedException e) {
                     //nothing to be done here, if this happens we will just retry sooner.
                 }
                 System.out.println("Retrying to execute request.");

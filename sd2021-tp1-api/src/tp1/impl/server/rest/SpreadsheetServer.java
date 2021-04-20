@@ -3,7 +3,6 @@ package tp1.impl.server.rest;
 import jakarta.inject.Singleton;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.server.rest.resources.SpreadsheetRest;
 import tp1.impl.util.discovery.Discovery;
 

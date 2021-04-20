@@ -2,7 +2,6 @@ package tp1.impl.server.rest;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import tp1.impl.server.resourceAbstraction.UsersResource;
 import tp1.impl.server.rest.resources.UsersRest;
 import tp1.impl.util.discovery.Discovery;
 
@@ -40,7 +39,6 @@ public class UsersServer {
 
         } catch (Exception e) {
             Log.severe(e.getMessage());
-            e.printStackTrace();
         }
     }
 

@@ -7,7 +7,7 @@ import tp1.api.service.soap.UsersException;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.UsersResource;
 
-import java.util.*;
+import java.util.List;
 
 @WebService(serviceName = SoapUsers.NAME,
         targetNamespace = SoapUsers.NAMESPACE,

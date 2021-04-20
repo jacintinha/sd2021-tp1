@@ -63,12 +63,12 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     @Override
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
-         this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
     }
 
     @Override
     public void deleteUserSpreadsheets(String userId, String password) throws WebApplicationException {
-         this.parseResult(this.resource.deleteUserSpreadsheets(userId, password));
+        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password));
     }
 
     @Override

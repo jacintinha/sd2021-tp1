@@ -6,7 +6,6 @@ import tp1.api.service.util.Result;
 import tp1.api.service.util.Users;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.util.Mediator;
-import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
@@ -52,7 +51,7 @@ public class UsersResource implements Users {
             this.users.put(user.getUserId(), user);
         }
 
-    return Result.ok(user.getUserId());
+        return Result.ok(user.getUserId());
     }
 
     @Override
@@ -110,7 +109,6 @@ public class UsersResource implements Users {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
-            // TODO refactor?
             if (user.getEmail() != null) tempUser.setEmail(user.getEmail());
             if (user.getPassword() != null) tempUser.setPassword(user.getPassword());
             if (user.getFullName() != null) tempUser.setFullName(user.getFullName());
@@ -153,7 +151,6 @@ public class UsersResource implements Users {
 
     private void deleteSpreadsheets(String userId, String password) {
         new Thread(() -> {
-            // TODO
             String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
             URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 

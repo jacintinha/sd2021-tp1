@@ -1,7 +1,5 @@
 package tp1.api.service.util;
 
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
 
 
@@ -55,8 +53,7 @@ public interface Spreadsheets {
      * 404, if the spreadsheet or the user do not exist
      * 400, otherwise
      */
-    Result<String[][]> importValues(String sheetId, String userId,String range);
-
+    Result<String[][]> importValues(String sheetId, String userId, String range);
 
 
     /**

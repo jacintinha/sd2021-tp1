@@ -29,7 +29,7 @@ public class UsersRest implements RestUsers {
 
     @Override
     public String createUser(User user) throws WebApplicationException {
-       return this.parseResult(resource.createUser(user));
+        return this.parseResult(resource.createUser(user));
     }
 
     @Override

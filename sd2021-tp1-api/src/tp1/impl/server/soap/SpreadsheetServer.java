@@ -27,8 +27,6 @@ public class SpreadsheetServer {
         try {
             String domain = args[0];
 
-            Log.severe("Domain " + domain);
-
             String ip = InetAddress.getLocalHost().getHostAddress();
             String serverURI = String.format("http://%s:%s/soap", ip, PORT);
 
