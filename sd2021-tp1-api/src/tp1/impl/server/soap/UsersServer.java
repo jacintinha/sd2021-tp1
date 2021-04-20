@@ -41,7 +41,6 @@ public class UsersServer {
 
             Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
 
-            //More code can be executed here...
             Discovery.getInstance().start(domain, Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
 
         } catch (Exception e) {

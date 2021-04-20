@@ -6,6 +6,7 @@ import tp1.api.service.util.Result;
 import tp1.api.service.util.Users;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.util.Mediator;
+import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
@@ -37,7 +38,6 @@ public class UsersResource implements Users {
         if (user.getUserId() == null || user.getPassword() == null || user.getFullName() == null
                 || user.getEmail() == null) {
             Log.info("User object invalid.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -45,7 +45,6 @@ public class UsersResource implements Users {
             // Check if userId exists, if not return HTTP CONFLICT (409)
             if (this.users.containsKey(user.getUserId())) {
                 Log.info("User already exists.");
-//                throw new WebApplicationException(Status.CONFLICT);
                 return Result.error(Result.ErrorCode.CONFLICT);
             }
 
@@ -53,7 +52,6 @@ public class UsersResource implements Users {
             this.users.put(user.getUserId(), user);
         }
 
-//        return user.getUserId();
     return Result.ok(user.getUserId());
     }
 
@@ -64,7 +62,6 @@ public class UsersResource implements Users {
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (userId == null /*|| password == null*/) {
             Log.info("UserId or password null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -75,18 +72,15 @@ public class UsersResource implements Users {
             // Check if user exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
                 Log.info("User does not exist.");
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!user.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-//                throw new WebApplicationException(Status.FORBIDDEN);
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
         }
 
-//        return user;
         return Result.ok(user);
     }
 
@@ -97,7 +91,6 @@ public class UsersResource implements Users {
         // Check if data is valid, if not return HTTP BAD_REQUEST (400)
         if (userId == null || /*password == null ||*/ user == null) {
             Log.info("UserId, password or user object null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -107,7 +100,6 @@ public class UsersResource implements Users {
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (tempUser == null) {
                 Log.info("User doesn't exist.");
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -115,7 +107,6 @@ public class UsersResource implements Users {
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!tempUser.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-//                throw new WebApplicationException(Status.FORBIDDEN);
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
@@ -126,7 +117,6 @@ public class UsersResource implements Users {
         }
 
         return Result.ok(tempUser);
-//        return tempUser;
     }
 
     @Override
@@ -136,7 +126,6 @@ public class UsersResource implements Users {
         // Check if data is valid, if not return HTTP CONFLICT (409)
         if (userId == null /*|| password == null*/) {
             Log.info("UserId or password null.");
-//            throw new WebApplicationException(Status.CONFLICT);
             return Result.error(Result.ErrorCode.CONFLICT);
         }
 
@@ -147,13 +136,11 @@ public class UsersResource implements Users {
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
                 Log.info("User doesn't exist.");
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!user.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-//                throw new WebApplicationException(Status.FORBIDDEN);
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
             this.users.remove(userId);
@@ -161,7 +148,6 @@ public class UsersResource implements Users {
 
         deleteSpreadsheets(userId, password);
 
-//        return user;
         return Result.ok(user);
     }
 
@@ -180,7 +166,6 @@ public class UsersResource implements Users {
         Log.info("searchUsers : pattern = " + pattern);
 
         if (pattern == null) {
-//            throw new WebApplicationException(Status.NOT_FOUND);
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
 
@@ -197,7 +182,6 @@ public class UsersResource implements Users {
                 }
             }
         }
-//        return list;
         return Result.ok(list);
     }
 

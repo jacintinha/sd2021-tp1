@@ -1,6 +1,7 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
@@ -14,6 +15,7 @@ import tp1.util.CellRange;
 
 import java.net.URI;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 @Singleton
@@ -41,12 +43,10 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (password == null || !checkSpreadsheet(sheet)) {
             Log.info("Spreadsheet object or password invalid.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         if (this.getUser(sheet.getOwner(), password, this.domain) != 200) {
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -69,7 +69,6 @@ public class SpreadsheetResource implements Spreadsheets {
 
             this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
         }
-//        return sheet.getSheetId();
         return Result.ok(sheet.getSheetId());
     }
 
@@ -80,7 +79,10 @@ public class SpreadsheetResource implements Spreadsheets {
      * @return true if sheet is valid, false otherwise
      */
     private boolean checkSpreadsheet(Spreadsheet sheet) {
-        return sheet != null && sheet.getRows() >= 0 && sheet.getColumns() >= 0 && sheet.getSheetId() == null && sheet.getSheetURL() == null && sheet.getSharedWith() != null && sheet.getSharedWith().size() == 0;
+        Log.severe("aaaa");
+        Log.severe(String.valueOf(sheet.getSharedWith() != null && sheet.getSharedWith().size() == 0));
+        return sheet != null && sheet.getRows() >= 0 && sheet.getColumns() >= 0 && sheet.getSheetId() == null
+                && sheet.getSheetURL() == null;
     }
 
     @Override
@@ -90,14 +92,12 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null) {
             Log.info("SheetId, userId null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
         Spreadsheet sheet;
         synchronized (this) {
             sheet = this.sheets.get(sheetId);
             if (sheet == null) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             // Same domain only
@@ -107,7 +107,6 @@ public class SpreadsheetResource implements Spreadsheets {
             if (userCode == 200) {
                 // If user is owner
                 if (sheet.getOwner().equals(userId)) {
-//                    return sheet;
                     return Result.ok(sheet);
                 } else {
                     // If user is in shared
@@ -115,17 +114,14 @@ public class SpreadsheetResource implements Spreadsheets {
                     String sharedUser = userId + "@" + this.domain;
 
                     if (sharedWith != null && sharedWith.contains(sharedUser)) {
-//                        return sheet;
                         return Result.ok(sheet);
                     }
 
                     // TODO, not specified? but passes test
                     // Neither shared nor owner
-//                    throw new WebApplicationException(Status.FORBIDDEN);
                     return Result.error(Result.ErrorCode.FORBIDDEN);
                 }
             } else {
-//                throw new WebApplicationException(Status.fromStatusCode(userCode));
                 return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(userCode).name()));
             }
         }
@@ -157,7 +153,6 @@ public class SpreadsheetResource implements Spreadsheets {
             }
 
         }
-//        return null;
         return Result.ok(null);
     }
 
@@ -171,14 +166,12 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null) {
             Log.info("SheetId, userId or password null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         int userStatusCode = getUser(userId, password, this.domain);
 
         if (userStatusCode != 200) {
-//            throw new WebApplicationException(Status.fromStatusCode(userStatusCode));
             // TODO BIG TODO
             return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(userStatusCode).name()));
         }
@@ -187,7 +180,6 @@ public class SpreadsheetResource implements Spreadsheets {
             sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             Set<String> sharedWith = sheet.getSharedWith();
@@ -195,12 +187,10 @@ public class SpreadsheetResource implements Spreadsheets {
             String userSharedWith = userId + "@" + this.domain;
 
             if (!userId.equals(sheet.getOwner()) && (sharedWith == null || !sharedWith.contains(userSharedWith))) {
-//                throw new WebApplicationException(Status.FORBIDDEN);
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
         }
-//        return calculateSpreadsheetValues(sheet);
         return Result.ok(calculateSpreadsheetValues(sheet));
     }
 
@@ -269,7 +259,6 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null || rawValue == null || cell == null) {
             Log.info("SheetId, userId, rawValue or cell is null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -282,7 +271,6 @@ public class SpreadsheetResource implements Spreadsheets {
                 sheet = this.sheets.get(sheetId);
 
                 if (sheet == null) {
-//                    throw new WebApplicationException(Status.NOT_FOUND);
                     return Result.error(Result.ErrorCode.NOT_FOUND);
                     }
 
@@ -296,11 +284,9 @@ public class SpreadsheetResource implements Spreadsheets {
                     sheet.setCellRawValue(cell, rawValue);
             }
         } else {
-//            throw new WebApplicationException(Status.fromStatusCode(userCode));
             return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(userCode).name()));
         }
 
-//        return null;
         return Result.ok(null);
     }
 
@@ -318,7 +304,6 @@ public class SpreadsheetResource implements Spreadsheets {
             Spreadsheet sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -327,7 +312,6 @@ public class SpreadsheetResource implements Spreadsheets {
             // Check if owner exists, if not return HTTP NOT_FOUND (404)
             if (ownerStatusCode != 200) {
                 Log.info("User does not exist or password is incorrect.");
-//                throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
                 return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
             }
 
@@ -339,7 +323,6 @@ public class SpreadsheetResource implements Spreadsheets {
             int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
 
             if (newUserStatusCode == 404) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -355,7 +338,6 @@ public class SpreadsheetResource implements Spreadsheets {
             shared.add(userId);
             sheet.setSharedWith(shared);
         }
-//        return null;
         return Result.ok(null);
     }
 
@@ -364,7 +346,6 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null) {
             Log.info("SheetId, userId or password null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -372,7 +353,6 @@ public class SpreadsheetResource implements Spreadsheets {
             Spreadsheet sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -381,7 +361,6 @@ public class SpreadsheetResource implements Spreadsheets {
             // Check if owner exists, if not return HTTP NOT_FOUND (404)
             if (ownerStatusCode != 200) {
                 Log.info("User does not exist or password is incorrect.");
-//                throw new WebApplicationException(Status.fromStatusCode(ownerStatusCode));
                 return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
             }
 
@@ -393,7 +372,6 @@ public class SpreadsheetResource implements Spreadsheets {
             int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
 
             if (newUserStatusCode == 404) {
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -404,7 +382,6 @@ public class SpreadsheetResource implements Spreadsheets {
                 boolean exists = shared.remove(userId);
 
                 if (!exists) {
-    //                throw new WebApplicationException(Status.NOT_FOUND);
                     return Result.error(Result.ErrorCode.NOT_FOUND);
                 }
 
@@ -422,7 +399,6 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if data is valid, if not return HTTP CONFLICT (400)
         if (userId == null) {
             Log.info("UserId null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
@@ -451,7 +427,6 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if data is valid, if not return HTTP CONFLICT (400)
         if (sheetId == null) {
             Log.info("SheetId null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
         synchronized (this) {
@@ -459,7 +434,6 @@ public class SpreadsheetResource implements Spreadsheets {
 
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
-//                throw new WebApplicationException(Status.NOT_FOUND);
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
 
@@ -469,10 +443,8 @@ public class SpreadsheetResource implements Spreadsheets {
                 this.sheets.remove(sheetId);
                 this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
             } else if (userStatusCode == 403) {
-//                throw new WebApplicationException(Status.FORBIDDEN);
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             } else {
-//                throw new WebApplicationException(Status.BAD_REQUEST);
                 return Result.error(Result.ErrorCode.BAD_REQUEST);
             }
         }
