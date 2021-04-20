@@ -1,12 +1,10 @@
-package tp1.impl.server.rest.resources;
+package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response.Status;
 import tp1.api.User;
-import tp1.api.service.rest.RestUsers;
+import tp1.api.service.util.Result;
+import tp1.api.service.util.Users;
 import tp1.impl.server.rest.SpreadsheetServer;
-import tp1.impl.server.rest.UsersServer;
 import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
 
@@ -15,48 +13,59 @@ import java.util.*;
 import java.util.logging.Logger;
 
 @Singleton
-public class UsersResource implements RestUsers {
+public class UsersResource implements Users {
 
+
+    private String domain;
     private final Map<String, User> users = new HashMap<>();
+
 
     private static final Logger Log = Logger.getLogger(UsersResource.class.getName());
 
     public UsersResource() {
     }
 
+    public UsersResource(String domain) {
+        this.domain = domain;
+    }
+
     @Override
-    public String createUser(User user) {
+    public Result<String> createUser(User user) {
         Log.info("createUser : " + user);
 
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (user.getUserId() == null || user.getPassword() == null || user.getFullName() == null
                 || user.getEmail() == null) {
             Log.info("User object invalid.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
+//            throw new WebApplicationException(Status.BAD_REQUEST);
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         synchronized (this) {
             // Check if userId exists, if not return HTTP CONFLICT (409)
             if (this.users.containsKey(user.getUserId())) {
                 Log.info("User already exists.");
-                throw new WebApplicationException(Status.CONFLICT);
+//                throw new WebApplicationException(Status.CONFLICT);
+                return Result.error(Result.ErrorCode.CONFLICT);
             }
 
             // Add the user to the map of users
             this.users.put(user.getUserId(), user);
         }
 
-        return user.getUserId();
+//        return user.getUserId();
+    return Result.ok(user.getUserId());
     }
 
     @Override
-    public User getUser(String userId, String password) {
+    public Result<User> getUser(String userId, String password) {
         Log.info("getUser : user = " + userId + "; pwd = " + password);
 
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (userId == null /*|| password == null*/) {
             Log.info("UserId or password null.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
+//            throw new WebApplicationException(Status.BAD_REQUEST);
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         User user;
@@ -66,26 +75,30 @@ public class UsersResource implements RestUsers {
             // Check if user exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
                 Log.info("User does not exist.");
-                throw new WebApplicationException(Status.NOT_FOUND);
+//                throw new WebApplicationException(Status.NOT_FOUND);
+                return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!user.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-                throw new WebApplicationException(Status.FORBIDDEN);
+//                throw new WebApplicationException(Status.FORBIDDEN);
+                return Result.error(Result.ErrorCode.FORBIDDEN);
             }
         }
 
-        return user;
+//        return user;
+        return Result.ok(user);
     }
 
     @Override
-    public User updateUser(String userId, String password, User user) {
+    public Result<User> updateUser(String userId, String password, User user) {
         Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
         // Check if data is valid, if not return HTTP BAD_REQUEST (400)
         if (userId == null || /*password == null ||*/ user == null) {
             Log.info("UserId, password or user object null.");
-            throw new WebApplicationException(Status.BAD_REQUEST);
+//            throw new WebApplicationException(Status.BAD_REQUEST);
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         User tempUser;
@@ -94,13 +107,16 @@ public class UsersResource implements RestUsers {
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (tempUser == null) {
                 Log.info("User doesn't exist.");
-                throw new WebApplicationException(Status.NOT_FOUND);
+//                throw new WebApplicationException(Status.NOT_FOUND);
+                return Result.error(Result.ErrorCode.NOT_FOUND);
             }
+
 
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!tempUser.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-                throw new WebApplicationException(Status.FORBIDDEN);
+//                throw new WebApplicationException(Status.FORBIDDEN);
+                return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
             // TODO refactor?
@@ -109,17 +125,19 @@ public class UsersResource implements RestUsers {
             if (user.getFullName() != null) tempUser.setFullName(user.getFullName());
         }
 
-        return tempUser;
+        return Result.ok(tempUser);
+//        return tempUser;
     }
 
     @Override
-    public User deleteUser(String userId, String password) {
+    public Result<User> deleteUser(String userId, String password) {
         Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 
         // Check if data is valid, if not return HTTP CONFLICT (409)
         if (userId == null /*|| password == null*/) {
             Log.info("UserId or password null.");
-            throw new WebApplicationException(Status.CONFLICT);
+//            throw new WebApplicationException(Status.CONFLICT);
+            return Result.error(Result.ErrorCode.CONFLICT);
         }
 
         User user;
@@ -129,25 +147,28 @@ public class UsersResource implements RestUsers {
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
                 Log.info("User doesn't exist.");
-                throw new WebApplicationException(Status.NOT_FOUND);
+//                throw new WebApplicationException(Status.NOT_FOUND);
+                return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             // Check if the password is correct, if not return HTTP FORBIDDEN (403)
             if (!user.getPassword().equals(password)) {
                 Log.info("Password is incorrect.");
-                throw new WebApplicationException(Status.FORBIDDEN);
+//                throw new WebApplicationException(Status.FORBIDDEN);
+                return Result.error(Result.ErrorCode.FORBIDDEN);
             }
             this.users.remove(userId);
         }
 
         deleteSpreadsheets(userId, password);
 
-        return user;
+//        return user;
+        return Result.ok(user);
     }
 
     private void deleteSpreadsheets(String userId, String password) {
         new Thread(() -> {
             // TODO
-            String serviceName = UsersServer.domain + ":" + SpreadsheetServer.SERVICE;
+            String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
             URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
             Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
@@ -155,12 +176,14 @@ public class UsersResource implements RestUsers {
     }
 
     @Override
-    public List<User> searchUsers(String pattern) {
+    public Result<List<User>> searchUsers(String pattern) {
         Log.info("searchUsers : pattern = " + pattern);
 
         if (pattern == null) {
-            throw new WebApplicationException(Status.NOT_FOUND);
+//            throw new WebApplicationException(Status.NOT_FOUND);
+            return Result.error(Result.ErrorCode.NOT_FOUND);
         }
+
         List<User> list;
         Set<Map.Entry<String, User>> map;
         synchronized (this) {
@@ -174,7 +197,8 @@ public class UsersResource implements RestUsers {
                 }
             }
         }
-        return list;
+//        return list;
+        return Result.ok(list);
     }
 
     /**

@@ -1,21 +1,22 @@
-package tp1.impl.server.soap.WS;
+package tp1.impl.server.rest.resources;
 
 import jakarta.jws.WebService;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
+import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.soap.SheetsException;
 import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
-import tp1.impl.server.soap.SpreadsheetServer;
 import tp1.impl.server.soap.UsersServer;
 import tp1.impl.util.MediatorSoap;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
-import java.util.*;
 
 @WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
-public class SpreadsheetWS implements SoapSpreadsheets {
+public class SpreadsheetRest implements RestSpreadsheets {
 //    private final Map<String, Spreadsheet> sheets = new HashMap<>();
 //    private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
 //    private final Map<String, String[][]> sheetCache = new HashMap<>();
@@ -24,22 +25,22 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     private SpreadsheetResource resource;
 
-    public SpreadsheetWS() {
+    public SpreadsheetRest() {
     }
 
-    public SpreadsheetWS(String domain, String serverURI) {
+    public SpreadsheetRest(String domain, String serverURI) {
         this.resource = new SpreadsheetResource(domain, serverURI);
     }
 
-    private <T> T parseResult(Result<T> result) throws SheetsException {
+    private <T> T parseResult(Result<T> result) throws WebApplicationException {
         if (result.isOK()) {
             return result.value();
         }
-        throw new SheetsException(result.error().name());
+        throw new WebApplicationException(Response.Status.valueOf(result.error().name()));
     }
 
     @Override
-    public String createSpreadsheet(Spreadsheet sheet, String password) throws SheetsException {
+    public String createSpreadsheet(Spreadsheet sheet, String password) throws WebApplicationException {
 //            Log.info("createSpreadsheet : " + sheet);
 //            // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
 //            if (password == null || !checkSpreadsheet(sheet)) {
@@ -86,7 +87,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 //    }
 
     @Override
-    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
+    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
 //        Log.info("getSpreadsheet : sheet = " + sheetId + "; user = " + userId + "; pwd = " + password);
 //
 //        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
@@ -139,7 +140,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range) throws SheetsException {
+    public String[][] importValues(String sheetId, String userId, String range) throws WebApplicationException {
 
 //        Spreadsheet referencedSheet;
 //
@@ -164,7 +165,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 //    }
 
     @Override
-    public String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws SheetsException {
+    public String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws WebApplicationException {
         // Check if user and sheet are valid, if not throw exception
 //        if (sheetId == null || userId == null) {
 //            Log.info("SheetId or userId null");
@@ -250,7 +251,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 //    }
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
-            throws SheetsException {
+            throws WebApplicationException {
 //        Log.info("updateCell : sheet = " + sheetId + "; user = " + userId + "; pwd = " + password + "; cell = " + cell
 //                + "; rawValue " + rawValue);
 //
@@ -287,7 +288,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void shareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
+    public void shareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
 
 //        // Check if user the sheet and the password are valid, if not return HTTP
 //        // BAD_REQUEST (400)
@@ -338,7 +339,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void unshareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
+    public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
 //        if (sheetId == null || userId == null) {
 //            Log.info("SheetId or userId null.");
@@ -390,7 +391,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password) throws SheetsException {
+    public void deleteUserSpreadsheets(String userId, String password) throws WebApplicationException {
 //        Log.info("deleteUserSpreadsheets : user = " + userId + "; pwd = " + password);
 //
 //        // Check if data is valid, if not return HTTP CONFLICT (400)
@@ -418,7 +419,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void deleteSpreadsheet(String sheetId, String password) throws SheetsException {
+    public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
 //        Log.info("deleteSpreadsheet : sheet = " + sheetId + "; pwd = " + password);
 //
 //        // Check if data is valid, if not return HTTP CONFLICT (400)

@@ -1,5 +1,7 @@
 package tp1.api.service.util;
 
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
 
 
@@ -40,6 +42,21 @@ public interface Spreadsheets {
      * 400 otherwise
      */
     Result<Spreadsheet> getSpreadsheet(String sheetId, String userId, String password);
+
+    /**
+     * TODO
+     * Retrieves the calculated values of a spreadsheet.
+     *
+     * @param userId   - The user requesting the values
+     * @param sheetId  - the spreadsheet whose values are being retrieved.
+     * @param password - The password of the user performing the operation.
+     * @return 200, if the operation is successful
+     * 403, if the spreadsheet is not shared with user, or the user is not the owner, or the password is incorrect.
+     * 404, if the spreadsheet or the user do not exist
+     * 400, otherwise
+     */
+    Result<String[][]> importValues(String sheetId, String userId,String range);
+
 
 
     /**
@@ -99,4 +116,16 @@ public interface Spreadsheets {
      * 400, otherwise
      */
     Result<String[][]> getSpreadsheetValues(String sheetId, String userId, String password);
+
+    /**
+     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     *
+     * @param userId   - the user whose sheets will be deleted.
+     * @param password - the password of the owner of the spreadsheets.
+     * @return 204 if the sheets deletion was successful.
+     * 400, otherwise.
+     */
+    Result<Void> deleteUserSpreadsheets(String userId, String password);
+
+
 }

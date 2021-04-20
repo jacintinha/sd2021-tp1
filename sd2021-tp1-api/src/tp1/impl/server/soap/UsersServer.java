@@ -22,11 +22,10 @@ public class UsersServer {
     public static final int PORT = 8080;
     public static final String SERVICE = "users";
     public static final String SOAP_USERS_PATH = "/soap/users";
-    public static String domain = "";
 
     public static void main(String[] args) {
         try {
-            domain = args[0];
+            String domain = args[0];
 
             String ip = InetAddress.getLocalHost().getHostAddress();
             String serverURI = String.format("http://%s:%s/soap", ip, PORT);
@@ -35,7 +34,7 @@ public class UsersServer {
 
             server.setExecutor(Executors.newCachedThreadPool());
 
-            Endpoint soapUsersEndpoint = Endpoint.create(new UsersWS());
+            Endpoint soapUsersEndpoint = Endpoint.create(new UsersWS(domain));
 
             soapUsersEndpoint.publish(server.createContext(SOAP_USERS_PATH));
             server.start();

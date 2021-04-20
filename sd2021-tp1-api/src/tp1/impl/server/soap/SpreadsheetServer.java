@@ -22,23 +22,21 @@ public class SpreadsheetServer {
     public static final int PORT = 8080;
     public static final String SERVICE = "sheets";
     public static final String SOAP_SPREADSHEETS_PATH = "/soap/spreadsheets";
-    public static String serverURI = "";
-    public static String domain = "";
 
     public static void main(String[] args) {
         try {
-            domain = args[0];
+            String domain = args[0];
 
             Log.severe("Domain " + domain);
 
             String ip = InetAddress.getLocalHost().getHostAddress();
-            serverURI = String.format("http://%s:%s/soap", ip, PORT);
+            String serverURI = String.format("http://%s:%s/soap", ip, PORT);
 
             HttpServer server = HttpServer.create(new InetSocketAddress(ip, PORT), 0);
 
             server.setExecutor(Executors.newCachedThreadPool());
 
-            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS());
+            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS(domain, serverURI));
 
             soapSpreadsheetsEndpoint.publish(server.createContext(SOAP_SPREADSHEETS_PATH));
 

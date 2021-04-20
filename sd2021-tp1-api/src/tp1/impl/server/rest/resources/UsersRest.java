@@ -1,40 +1,37 @@
-package tp1.impl.server.soap.WS;
+package tp1.impl.server.rest.resources;
 
-import jakarta.jws.WebService;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import tp1.api.User;
-import tp1.api.service.soap.SoapUsers;
-import tp1.api.service.soap.UsersException;
+import tp1.api.service.rest.RestUsers;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.UsersResource;
 
-import java.util.*;
+import java.util.List;
 
-@WebService(serviceName = SoapUsers.NAME,
-        targetNamespace = SoapUsers.NAMESPACE,
-        endpointInterface = SoapUsers.INTERFACE)
-public class UsersWS implements SoapUsers {
+public class UsersRest implements RestUsers {
 //    private final Map<String, User> users = new HashMap<>();
 
 //    private static final Logger Log = Logger.getLogger(UsersWS.class.getName());
 
     private UsersResource resource;
 
-    public UsersWS() {
+    public UsersRest() {
     }
 
-    public UsersWS(String domain) {
+    public UsersRest(String domain) {
         this.resource = new UsersResource(domain);
     }
 
-    private <T> T parseResult(Result<T> result) throws UsersException {
+    private <T> T parseResult(Result<T> result) throws WebApplicationException {
         if (result.isOK()) {
             return result.value();
         }
-        throw new UsersException(result.error().name());
+        throw new WebApplicationException(Response.Status.valueOf(result.error().name()));
     }
 
     @Override
-    public String createUser(User user) throws UsersException {
+    public String createUser(User user) throws WebApplicationException {
 //        Log.info("createUser : " + user);
 //
 //        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
@@ -56,11 +53,11 @@ public class UsersWS implements SoapUsers {
 //        }
 //
 //        return user.getUserId();
-       return this.parseResult(this.resource.createUser(user));
+       return this.parseResult(resource.createUser(user));
     }
 
     @Override
-    public User getUser(String userId, String password) throws UsersException {
+    public User getUser(String userId, String password) throws WebApplicationException {
 //        Log.info("getUser : user = " + userId + "; pwd = " + password);
 //
 //        // Check if user is valid, if not return HTTP BAD_REQUEST (400)
@@ -86,11 +83,11 @@ public class UsersWS implements SoapUsers {
 //        }
 //
 //        return user;
-        return this.parseResult(this.resource.getUser(userId, password));
+        return this.parseResult(resource.getUser(userId, password));
     }
 
     @Override
-    public User updateUser(String userId, String password, User user) throws UsersException {
+    public User updateUser(String userId, String password, User user) throws WebApplicationException {
 //        Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 //
 //        // Check if data is valid, if not return HTTP BAD_REQUEST (400)
@@ -121,11 +118,11 @@ public class UsersWS implements SoapUsers {
 //        }
 //
 //        return tempUser;
-        return this.parseResult(this.resource.updateUser(userId, password, user));
+        return this.parseResult(resource.updateUser(userId, password, user));
     }
 
     @Override
-    public User deleteUser(String userId, String password) throws UsersException {
+    public User deleteUser(String userId, String password) throws WebApplicationException {
 //        Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 //
 //        // Check if data is valid, if not return HTTP CONFLICT (409)
@@ -154,7 +151,7 @@ public class UsersWS implements SoapUsers {
 //        deleteSpreadsheets(userId, password);
 //
 //        return user;
-        return this.parseResult(this.resource.deleteUser(userId, password));
+        return this.parseResult(resource.deleteUser(userId, password));
     }
 
 //    private void deleteSpreadsheets(String userId, String password) {
@@ -168,7 +165,7 @@ public class UsersWS implements SoapUsers {
 //    }
 
     @Override
-    public List<User> searchUsers(String pattern) throws UsersException {
+    public List<User> searchUsers(String pattern) throws WebApplicationException {
 //        Log.info("searchUsers : pattern = " + pattern);
 //
 //        if (pattern == null) {
@@ -188,7 +185,7 @@ public class UsersWS implements SoapUsers {
 //            }
 //        }
 //        return list;
-        return this.parseResult(this.resource.searchUsers(pattern));
+        return this.parseResult(resource.searchUsers(pattern));
     }
 
 //    /**

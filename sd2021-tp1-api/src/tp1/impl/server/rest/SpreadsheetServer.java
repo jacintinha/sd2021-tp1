@@ -3,7 +3,8 @@ package tp1.impl.server.rest;
 import jakarta.inject.Singleton;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import tp1.impl.server.rest.resources.SpreadsheetResource;
+import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
+import tp1.impl.server.rest.resources.SpreadsheetRest;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.InetAddress;
@@ -22,19 +23,17 @@ public class SpreadsheetServer {
 
     public static final int PORT = 8080;
     public static final String SERVICE = "sheets";
-    public static String serverURI = "";
-    public static String domain = "";
 
     public static void main(String[] args) {
         try {
             String ip = InetAddress.getLocalHost().getHostAddress();
-
-            domain = args[0];
+            String domain = args[0];
+            String serverURI = String.format("http://%s:%s/rest", ip, PORT);
 
             ResourceConfig config = new ResourceConfig();
-            config.register(SpreadsheetResource.class);
+            config.register(new SpreadsheetRest(domain, serverURI));
 
-            serverURI = String.format("http://%s:%s/rest", ip, PORT);
+
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config);
 
             Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
