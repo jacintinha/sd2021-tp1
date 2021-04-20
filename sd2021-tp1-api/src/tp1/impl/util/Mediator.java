@@ -14,9 +14,9 @@ import tp1.api.service.rest.RestUsers;
 public class Mediator {
 
     public final static int MAX_RETRIES = 3;
-    public final static long RETRY_PERIOD = 10000;
-    public final static int CONNECTION_TIMEOUT = 10000;
-    public final static int REPLY_TIMEOUT = 10000;
+    public final static long RETRY_PERIOD = 1000;
+    public final static int CONNECTION_TIMEOUT = 1000;
+    public final static int REPLY_TIMEOUT = 600;
 
     public static int getUser(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
@@ -42,10 +42,9 @@ public class Mediator {
 
                 success = true;
                 return r.getStatus();
-
             } catch (ProcessingException pe) {
-                System.out.println("Timeout occurred");
-                pe.printStackTrace();
+                System.out.println("USERS: Timeout occurred");
+//                pe.printStackTrace();
                 retries++;
                 try {
                     Thread.sleep(RETRY_PERIOD);
@@ -75,7 +74,6 @@ public class Mediator {
         boolean success = false;
 
         while (!success && retries < MAX_RETRIES) {
-
             try {
                 Response r = target.queryParam("userId", userId).queryParam("range", range).request()
                         .accept(MediaType.APPLICATION_JSON).get();
@@ -86,14 +84,13 @@ public class Mediator {
                     System.out.println("Error, HTTP error status: " + r.getStatus());
 
                 success = true;
-//				return r.getStatus();
-
+                return null;
             } catch (ProcessingException pe) {
-                System.out.println("Timeout occurred");
+                System.out.println("SHEETS: Timeout occurred");
                 pe.printStackTrace();
                 retries++;
                 try {
-                    Thread.sleep(RETRY_PERIOD);
+                    Thread.sleep(RETRY_PERIOD/10);
                 } catch (InterruptedException e) {
                     // nothing to be done here, if this happens we will just retry sooner.
                 }
@@ -101,7 +98,6 @@ public class Mediator {
             }
         }
         return null;
-//		return 500;
     }
 
     public static int deleteSpreadsheets(String serverUrl, String userId, String password) {
@@ -120,7 +116,8 @@ public class Mediator {
         short retries = 0;
         boolean success = false;
 
-        while (!success && retries < MAX_RETRIES) {
+        // Deleting user's spreadsheets must be done eventually
+        while (!success && retries < 100) {
             try {
                 Response r = target.path(userId).queryParam("password", password).request().delete();
 
@@ -129,7 +126,7 @@ public class Mediator {
 
             } catch (ProcessingException pe) {
                 System.out.println("Timeout occurred");
-                pe.printStackTrace();
+//                pe.printStackTrace();
                 retries++;
                 try {
                     Thread.sleep(RETRY_PERIOD);

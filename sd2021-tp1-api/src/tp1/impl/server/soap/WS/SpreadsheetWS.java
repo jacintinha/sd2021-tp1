@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 public class SpreadsheetWS implements SoapSpreadsheets {
     private final Map<String, Spreadsheet> sheets = new HashMap<>();
     private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
+    private final Map<String, String[][]> sheetCache = new HashMap<>();
 
     private static final Logger Log = Logger.getLogger(SpreadsheetWS.class.getName());
 
@@ -106,7 +107,6 @@ public class SpreadsheetWS implements SoapSpreadsheets {
                         return sheet;
                     }
 
-                    // TODO, not specified? but passes test
                     // Neither shared nor owner
                     throw new SheetsException("User cannot access this sheet");
                 }
@@ -214,18 +214,23 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
                 if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
                     // Intra-domain
-                    try {
-                        return importValues(sheetId, owner, range);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    return importValues(sheetId, owner, range);
                 }
-                // Inter-domain
-                return MediatorSoap.getSpreadsheetRange(sheetURL, owner, sheetId, range);
 
-                // need to get data that might be in a different server
-                // return null;
+                // Inter-domain
+                // TODO MARKER
+                String cacheId = sheetURL+"&"+range;
+                String[][] values = MediatorSoap.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+                if (values != null) {
+                    sheetCache.put(cacheId,values);
+                    return values;
+                }
+
+                // If we can't connect, return the data in cache
+                return sheetCache.get(cacheId);
+
+                // If cache doesn't have the data and we can't connect to the server
+                // return null for the engine
             }
         });
     }

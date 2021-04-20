@@ -22,6 +22,8 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
     private final Map<String, Spreadsheet> sheets = new HashMap<>();
     private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
+    private final Map<String, String[][]> sheetCache = new HashMap<>();
+    private final Map<String, String> authenticatedUsers = new HashMap<>();
 
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
 
@@ -121,7 +123,19 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-        return Mediator.getUser(knownURIs[0].toString(), userId, password);
+        int userStatusCode = Mediator.getUser(knownURIs[0].toString(), userId, password);
+
+//        if (userStatusCode == 200) {
+//            this.authenticatedUsers.put(userId, password);
+//        } else if (userStatusCode == 500) {
+//            String userPW = this.authenticatedUsers.get(userId);
+//            Log.severe("Getting user from cache.");
+//            if (userPW != null && userPW.equals(password)) return 200;
+//        } else {
+//            this.authenticatedUsers.remove(userId);
+//        }
+        return userStatusCode;
+
     }
 
     @Override
@@ -139,8 +153,6 @@ public class SpreadsheetResource implements RestSpreadsheets {
             }
         }
         return null;
-
-
     }
 
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
@@ -151,7 +163,7 @@ public class SpreadsheetResource implements RestSpreadsheets {
     @Override
     public String[][] getSpreadsheetValues(String sheetId, String userId, String password) {
         // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
-        if (sheetId == null || userId == null /*|| password == null*/) {
+        if (sheetId == null || userId == null) {
             Log.info("SheetId, userId or password null.");
             throw new WebApplicationException(Status.BAD_REQUEST);
         }
@@ -163,14 +175,12 @@ public class SpreadsheetResource implements RestSpreadsheets {
         }
         Spreadsheet sheet;
         synchronized (this) {
-
             sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
                 throw new WebApplicationException(Status.NOT_FOUND);
             }
             Set<String> sharedWith = sheet.getSharedWith();
-
 
             String userSharedWith = userId + "@" + SpreadsheetServer.domain;
 
@@ -213,20 +223,30 @@ public class SpreadsheetResource implements RestSpreadsheets {
 
                         String owner = sheet.getOwner() + "@" + SpreadsheetServer.domain;
 
+                        // Intra-domain
                         if (sheetURL.startsWith(SpreadsheetServer.serverURI)) {
-                            // Intra-domain
-                            try {
-                                return importValues(sheetId, owner, range);
-
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                            return importValues(sheetId, owner, range);
                         }
-                        // Inter-domain
-                        return Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
 
-                        // need to get data that might be in a different server
-//                        return null;
+                        // Inter-domain
+                        // TODO MARKER
+                        String cacheId = sheetURL+"&"+range;
+
+                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+
+                        if (values != null) {
+                            sheetCache.put(cacheId, values);
+                            return values;
+                        }
+
+                        // If we can't connect, return the data in cache
+                        Log.severe("Getting values from cache.");
+                        Log.severe(String.valueOf(sheetCache.get(cacheId) != null));
+                        return sheetCache.get(cacheId);
+
+                        // If cache doesn't have the data and we can't connect to the server
+                        // return null for the engine
+
                     }
                 });
     }
