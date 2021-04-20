@@ -79,8 +79,6 @@ public class SpreadsheetResource implements Spreadsheets {
      * @return true if sheet is valid, false otherwise
      */
     private boolean checkSpreadsheet(Spreadsheet sheet) {
-        Log.severe("aaaa");
-        Log.severe(String.valueOf(sheet.getSharedWith() != null && sheet.getSharedWith().size() == 0));
         return sheet != null && sheet.getRows() >= 0 && sheet.getColumns() >= 0 && sheet.getSheetId() == null
                 && sheet.getSheetURL() == null;
     }
@@ -94,14 +92,18 @@ public class SpreadsheetResource implements Spreadsheets {
             Log.info("SheetId, userId null.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
+
+
+        // Could check if sheet exists here
+        // Same domain only
+        int userCode = this.getUser(userId, password, this.domain);
+
         Spreadsheet sheet;
         synchronized (this) {
             sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
-            // Same domain only
-            int userCode = this.getUser(userId, password, this.domain);
 
             // User exists
             if (userCode == 200) {
@@ -116,8 +118,6 @@ public class SpreadsheetResource implements Spreadsheets {
                     if (sharedWith != null && sharedWith.contains(sharedUser)) {
                         return Result.ok(sheet);
                     }
-
-                    // TODO, not specified? but passes test
                     // Neither shared nor owner
                     return Result.error(Result.ErrorCode.FORBIDDEN);
                 }
@@ -128,6 +128,14 @@ public class SpreadsheetResource implements Spreadsheets {
 
     }
 
+    /**
+     * Auxiliary method to get a User
+     *
+     * @param userId
+     * @param password
+     * @param domain   - Domain where user is stored
+     * @return the respective code given by the UserServer
+     */
     private int getUser(String userId, String password, String domain) {
         String serviceName = domain + ":" + UsersServer.SERVICE;
 
@@ -151,11 +159,17 @@ public class SpreadsheetResource implements Spreadsheets {
             if (shared != null && shared.contains(userId)) {
                 return Result.ok(this.getSheetRangeValues(referencedSheet, range));
             }
-
         }
         return Result.ok(null);
     }
 
+    /**
+     * Auxiliary method to extract a certain range of values from a spreadsheet
+     *
+     * @param sheet
+     * @param range
+     * @return extracted range of values
+     */
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
         CellRange cellRange = new CellRange(range);
         return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
@@ -172,13 +186,11 @@ public class SpreadsheetResource implements Spreadsheets {
         int userStatusCode = getUser(userId, password, this.domain);
 
         if (userStatusCode != 200) {
-            // TODO BIG TODO
             return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(userStatusCode).name()));
         }
         Spreadsheet sheet;
         synchronized (this) {
             sheet = this.sheets.get(sheetId);
-
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -190,10 +202,16 @@ public class SpreadsheetResource implements Spreadsheets {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
-        }
+        } //TODO
         return Result.ok(calculateSpreadsheetValues(sheet));
     }
 
+    /**
+     * Auxiliary method to calculate the values of a spreadsheet
+     *
+     * @param sheet
+     * @return the calculated values
+     */
     private String[][] calculateSpreadsheetValues(Spreadsheet sheet) {
         return SpreadsheetEngineImpl.getInstance().
                 computeSpreadsheetValues(new AbstractSpreadsheet() {
@@ -230,28 +248,27 @@ public class SpreadsheetResource implements Spreadsheets {
                         }
 
                         // Inter-domain
-                        // TODO MARKER
-                        String cacheId = sheetURL+"&"+range;
+                        String cacheId = sheetURL + "&" + range;
 
                         String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
 
-                        if (values != null) {
-                            sheetCache.put(cacheId, values);
-                            return values;
+                        synchronized (sheetCache) {
+                            if (values != null) {
+                                sheetCache.put(cacheId, values);
+                                return values;
+                            }
+
+                            // If we can't connect, return the data in cache
+                            Log.info("Getting values from cache.");
+                            return sheetCache.get(cacheId);
                         }
-
-                        // If we can't connect, return the data in cache
-                        Log.severe("Getting values from cache.");
-                        Log.severe(String.valueOf(sheetCache.get(cacheId) != null));
-                        return sheetCache.get(cacheId);
-
                         // If cache doesn't have the data and we can't connect to the server
                         // return null for the engine
-
                     }
                 });
     }
 
+    @Override
     public Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password) {
         Log.info("updateCell : sheet = " + sheetId +
                 "; user = " + userId + "; pwd = " + password + "; cell = " + cell + "; rawValue " + rawValue);
@@ -272,7 +289,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
                 if (sheet == null) {
                     return Result.error(Result.ErrorCode.NOT_FOUND);
-                    }
+                }
 
                 // If user is owner
                 if (sheet.getOwner().equals(userId))
@@ -293,39 +310,45 @@ public class SpreadsheetResource implements Spreadsheets {
     @Override
     public Result<Void> shareSpreadsheet(String sheetId, String userId, String password) {
 
-        // Check if user the sheet and the password are valid, if not return HTTP
-        // BAD_REQUEST (400)
+        // Check if the sheetId and the userId are valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null) {
             Log.info("SheetId, userId null.");
-//            throw new WebApplicationException(Status.BAD_REQUEST);
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
+        Spreadsheet sheet;
+        String owner;
         synchronized (this) {
-            Spreadsheet sheet = this.sheets.get(sheetId);
-
+            sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
+            owner = sheet.getOwner();
+        }
 
-            int ownerStatusCode = this.getUser(sheet.getOwner(), password, this.domain);
+        int ownerStatusCode = this.getUser(owner, password, this.domain);
 
-            // Check if owner exists, if not return HTTP NOT_FOUND (404)
-            if (ownerStatusCode != 200) {
-                Log.info("User does not exist or password is incorrect.");
-                return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
-            }
+        // Check if owner exists, if not return HTTP NOT_FOUND (404)
+        if (ownerStatusCode != 200) {
+            Log.info("User does not exist or password is incorrect.");
+            return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
+        }
 
-            String[] elems = userId.split("@");
+        String[] elems = userId.split("@");
 
-            String newUserId = elems[0];
-            String newUserDomain = elems[1];
+        String newUserId = elems[0];
+        String newUserDomain = elems[1];
 
-            int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
+        int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
 
-            if (newUserStatusCode == 404) {
+        if (newUserStatusCode == 404) {
+            return Result.error(Result.ErrorCode.NOT_FOUND);
+        }
+
+        synchronized (this) { // TODO sheet (?)
+            // If sheet still exists
+            if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
-
             Set<String> shared = sheet.getSharedWith();
 
             if (shared == null) {
@@ -349,35 +372,43 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
+        Spreadsheet sheet;
+        String owner;
         synchronized (this) {
-            Spreadsheet sheet = this.sheets.get(sheetId);
+            sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
+            owner = sheet.getOwner();
+        }
 
-            int ownerStatusCode = this.getUser(sheet.getOwner(), password, this.domain);
+        int ownerStatusCode = this.getUser(owner, password, this.domain);
 
-            // Check if owner exists, if not return HTTP NOT_FOUND (404)
-            if (ownerStatusCode != 200) {
-                Log.info("User does not exist or password is incorrect.");
-                return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
-            }
+        // Check if owner exists, if not return HTTP NOT_FOUND (404)
+        if (ownerStatusCode != 200) {
+            Log.info("User does not exist or password is incorrect.");
+            return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
+        }
 
-            String[] elems = userId.split("@");
+        String[] elems = userId.split("@");
 
-            String newUserId = elems[0];
-            String newUserDomain = elems[1];
+        String newUserId = elems[0];
+        String newUserDomain = elems[1];
 
-            int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
+        int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
 
-            if (newUserStatusCode == 404) {
+        if (newUserStatusCode == 404) {
+            return Result.error(Result.ErrorCode.NOT_FOUND);
+        }
+
+        synchronized (this) { //TODO sheet (?)
+
+            if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
-
             Set<String> shared = sheet.getSharedWith();
 
-            // TODO
             if (shared != null) {
                 boolean exists = shared.remove(userId);
 
@@ -429,16 +460,26 @@ public class SpreadsheetResource implements Spreadsheets {
             Log.info("SheetId null.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
+
+        Spreadsheet sheet;
+        String owner;
         synchronized (this) {
-            Spreadsheet sheet = this.sheets.get(sheetId);
+            sheet = this.sheets.get(sheetId);
 
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
+            owner = sheet.getOwner();
+        }
 
-            int userStatusCode = this.getUser(sheet.getOwner(), password, this.domain);
+        int userStatusCode = this.getUser(owner, password, this.domain);
 
+        synchronized (this) {
+            if (sheet == null) {
+                Log.info("Sheet doesn't exist.");
+                return Result.error(Result.ErrorCode.NOT_FOUND);
+            }
             if (userStatusCode == 200) {
                 this.sheets.remove(sheetId);
                 this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);

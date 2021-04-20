@@ -41,7 +41,7 @@ public class UsersResource implements Users {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
-        synchronized (this) {
+        synchronized (users) {
             // Check if userId exists, if not return HTTP CONFLICT (409)
             if (this.users.containsKey(user.getUserId())) {
                 Log.info("User already exists.");
@@ -67,7 +67,7 @@ public class UsersResource implements Users {
 
         User user;
 
-        synchronized (this) {
+        synchronized (users) {
             user = this.users.get(userId);
             // Check if user exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
@@ -95,7 +95,7 @@ public class UsersResource implements Users {
         }
 
         User tempUser;
-        synchronized (this) {
+        synchronized (users) {
             tempUser = this.users.get(userId);
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (tempUser == null) {
@@ -131,7 +131,7 @@ public class UsersResource implements Users {
 
         User user;
 
-        synchronized (this) {
+        synchronized (users) {
             user = this.users.get(userId);
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
             if (user == null) {
@@ -171,7 +171,7 @@ public class UsersResource implements Users {
 
         List<User> list;
         Set<Map.Entry<String, User>> map;
-        synchronized (this) {
+        synchronized (users) {
             map = this.users.entrySet();
 
             list = new LinkedList<>();
