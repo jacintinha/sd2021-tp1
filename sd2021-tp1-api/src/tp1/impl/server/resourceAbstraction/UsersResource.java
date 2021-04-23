@@ -59,7 +59,7 @@ public class UsersResource implements Users {
         Log.info("getUser : user = " + userId + "; pwd = " + password);
 
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
-        if (userId == null /*|| password == null*/) {
+        if (userId == null) {
             Log.info("UserId or password null.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
@@ -88,7 +88,7 @@ public class UsersResource implements Users {
         Log.info("updateUser : user = " + userId + "; pwd = " + password + " ; user = " + user);
 
         // Check if data is valid, if not return HTTP BAD_REQUEST (400)
-        if (userId == null || /*password == null ||*/ user == null) {
+        if (userId == null || user == null) {
             Log.info("UserId, password or user object null.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
@@ -122,13 +122,12 @@ public class UsersResource implements Users {
         Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 
         // Check if data is valid, if not return HTTP CONFLICT (409)
-        if (userId == null /*|| password == null*/) {
+        if (userId == null) {
             Log.info("UserId or password null.");
             return Result.error(Result.ErrorCode.CONFLICT);
         }
 
         User user;
-
         synchronized (users) {
             user = this.users.get(userId);
             // Check if userId exists, if not return HTTP NOT_FOUND (404)
@@ -144,11 +143,18 @@ public class UsersResource implements Users {
             this.users.remove(userId);
         }
 
+        // Asynchronously delete user's spreadsheets
         deleteSpreadsheets(userId, password);
 
         return Result.ok(user);
     }
 
+    /**
+     * Auxiliary method to call the endpoint which deletes the user's spreadsheets
+     *
+     * @param userId
+     * @param password
+     */
     private void deleteSpreadsheets(String userId, String password) {
         new Thread(() -> {
             String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
@@ -163,7 +169,7 @@ public class UsersResource implements Users {
         Log.info("searchUsers : pattern = " + pattern);
 
         if (pattern == null) {
-            return Result.error(Result.ErrorCode.NOT_FOUND);
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
         List<User> list;

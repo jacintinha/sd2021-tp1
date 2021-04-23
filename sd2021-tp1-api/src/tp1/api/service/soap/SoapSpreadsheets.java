@@ -83,12 +83,13 @@ public interface SoapSpreadsheets {
 
 
     /**
-     * TODO
      * Retrieves the calculated values of a spreadsheet.
      *
      * @param userId  - The user requesting the values
      * @param sheetId - the spreadsheet whose values are being retrieved.
      * @param range   - The range to import.
+     * @return 200, values
+     * 204, null, if no values
      * @throws SheetsException otherwise
      */
     @WebMethod

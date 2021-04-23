@@ -170,11 +170,9 @@ public class SpreadsheetResource implements Spreadsheets {
      * @return extracted range of values
      */
     private String[][] getSheetRangeValues(Spreadsheet sheet, String range) {
-        // TODO
-        synchronized (sheet) {
-            CellRange cellRange = new CellRange(range);
-            return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
-        }
+        // Can't synchronize due to remote request
+        CellRange cellRange = new CellRange(range);
+        return cellRange.extractRangeValuesFrom(calculateSpreadsheetValues(sheet));
     }
 
     @Override
@@ -204,7 +202,7 @@ public class SpreadsheetResource implements Spreadsheets {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             }
 
-        } //TODO
+        }
         return Result.ok(calculateSpreadsheetValues(sheet));
     }
 
@@ -346,8 +344,8 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
 
-        synchronized (this) { // TODO sheet (?) Yes
-            // If sheet still exists
+        synchronized (this) {
+            // Check if sheet still exists after breaking synchronized block
             sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
@@ -405,7 +403,8 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
 
-        synchronized (this) { //TODO sheet (?)
+        synchronized (this) {
+            // Check if sheet still exists after breaking synchronized block
             sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
@@ -479,6 +478,7 @@ public class SpreadsheetResource implements Spreadsheets {
         int userStatusCode = this.getUser(owner, password, this.domain);
 
         synchronized (this) {
+            // Check if sheet still exists after breaking synchronized block
             sheet = this.sheets.get(sheetId);
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
@@ -495,5 +495,4 @@ public class SpreadsheetResource implements Spreadsheets {
         }
         return Result.ok(null);
     }
-
 }

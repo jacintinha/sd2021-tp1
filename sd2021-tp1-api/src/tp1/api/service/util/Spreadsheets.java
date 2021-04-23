@@ -42,16 +42,13 @@ public interface Spreadsheets {
     Result<Spreadsheet> getSpreadsheet(String sheetId, String userId, String password);
 
     /**
-     * TODO
      * Retrieves the calculated values of a spreadsheet.
      *
      * @param userId   - The user requesting the values
      * @param sheetId  - the spreadsheet whose values are being retrieved.
      * @param password - The password of the user performing the operation.
      * @return 200, if the operation is successful
-     * 403, if the spreadsheet is not shared with user, or the user is not the owner, or the password is incorrect.
-     * 404, if the spreadsheet or the user do not exist
-     * 400, otherwise
+     * 204, null, in case of no values
      */
     Result<String[][]> importValues(String sheetId, String userId, String range);
 

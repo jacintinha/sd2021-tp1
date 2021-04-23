@@ -51,9 +51,6 @@ public class Discovery {
     // Used separate the two fields that make up a service announcement.
     private static final String DELIMITER = "\t";
 
-    //	private InetSocketAddress addr;
-//	private String serviceName;
-//	private String serviceURI;
     private final Map<String, Set<URIEntry>> knownURIs;
 
     public static Discovery getInstance() {
@@ -103,17 +100,15 @@ public class Discovery {
                         String msg = new String(pkt.getData(), 0, pkt.getLength());
                         String[] msgElems = msg.split(DELIMITER);
                         if (msgElems.length == 2) { // periodic announcement
-//                            System.out.printf("FROM %s (%s) : %s\n", pkt.getAddress().getCanonicalHostName(),
-//                                    pkt.getAddress().getHostAddress(), msg);
-
                             String rcvServiceName = msgElems[0];
                             String rcvServiceURI = msgElems[1];
                             URIEntry newEntry = new URIEntry(rcvServiceURI);
 
                             Set<URIEntry> uriSet = this.knownURIs.get(rcvServiceName);
 
-                            if (uriSet == null)
+                            if (uriSet == null) {
                                 uriSet = new HashSet<>();
+                            }
 
                             // Remove and add will simulate a put() operation
                             // The point is to update the timestamp
