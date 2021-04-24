@@ -86,11 +86,10 @@ public class Mediator {
 
     public static int getUser(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
-        if (serverUrl.contains("/rest")) {
+        if (serverUrl.split("/")[3].equals("rest")) {
             return getUserRest(restSetUp(serverUrl, RestUsers.PATH), userId, password);
         }
         return getUserSoap(soapSetUp(serverUrl), userId, password);
-
     }
 
     private static int getUserRest(WebTarget target, String userId, String password) {
@@ -149,7 +148,7 @@ public class Mediator {
 
     public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
         System.out.println("Sending request to server.");
-        if (serverUrl.contains("/rest")) {
+        if (serverUrl.split("/")[3].equals("rest")) {
             return getSpreadsheetRangeRest(restSetUp(serverUrl, "/import"), userId, range);
         }
         return getSpreadsheetRangeSoap(soapSetUpSheets(serverUrl), userId, sheetId, range);
@@ -216,7 +215,7 @@ public class Mediator {
 
     public static int deleteSpreadsheets(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
-        if (serverUrl.contains("/rest")) {
+        if (serverUrl.split("/")[3].equals("rest")) {
             return deleteSpreadsheetsRest(restSetUp(serverUrl, RestSpreadsheets.PATH + "/delete"), userId, password);
         }
         return deleteSpreadsheetsSoap(soapSetUpSheets(serverUrl), userId, password);
