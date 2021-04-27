@@ -20,6 +20,7 @@ import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.soap.SoapUsers;
 import tp1.api.service.soap.UsersException;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,6 +36,7 @@ public class Mediator {
     public final static int REPLY_TIMEOUT = 600;
 
     private static WebTarget restSetUp(String serverUrl, String path) {
+
         ClientConfig config = new ClientConfig();
         // how much time until we timeout when opening the TCP connection to the server
         config.property(ClientProperties.CONNECT_TIMEOUT, CONNECTION_TIMEOUT);
@@ -67,8 +69,8 @@ public class Mediator {
     }
 
     private static SoapSpreadsheets soapSetUpSheets(String serverUrl) {
-        System.out.println("Sending request to server.");
         SoapSpreadsheets spreadsheets = null;
+
         try {
             QName QNAME = new QName(SoapSpreadsheets.NAMESPACE, SoapSpreadsheets.NAME);
             Service service = Service.create(new URL(serverUrl + SPREADSHEETS_WSDL), QNAME);
