@@ -7,3 +7,5 @@
 *.iml
 *.bat
 bin/
+
+sd2021-tp1-api/messageserver.cert
