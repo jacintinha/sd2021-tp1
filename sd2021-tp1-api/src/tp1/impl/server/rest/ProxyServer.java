@@ -32,6 +32,7 @@ public class ProxyServer {
         try {
             String ip = InetAddress.getLocalHost().getHostAddress();
             String domain = args[0];
+            String secret = args[2];
             String serverURI = String.format("https://%s:%s/rest", ip, PORT);
 
             DropboxAPI dropbox = new DropboxAPI();
@@ -50,7 +51,7 @@ public class ProxyServer {
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetProxy(domain, serverURI));
+            config.register(new SpreadsheetProxy(domain, serverURI, secret));
 
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());

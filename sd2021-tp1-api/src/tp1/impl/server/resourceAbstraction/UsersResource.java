@@ -17,6 +17,7 @@ public class UsersResource implements Users {
 
 
     private String domain;
+    private String secret;
     private final Map<String, User> users = new HashMap<>();
 
 
@@ -25,8 +26,9 @@ public class UsersResource implements Users {
     public UsersResource() {
     }
 
-    public UsersResource(String domain) {
+    public UsersResource(String domain, String secret) {
         this.domain = domain;
+        this.secret = secret;
     }
 
     @Override
@@ -160,7 +162,7 @@ public class UsersResource implements Users {
             String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
             URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-            Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password);
+            Mediator.deleteSpreadsheets(knownURIs[0].toString(), userId, password, secret);
         }).start();
     }
 

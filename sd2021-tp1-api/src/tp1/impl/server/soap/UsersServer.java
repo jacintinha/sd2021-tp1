@@ -31,6 +31,7 @@ public class UsersServer {
     public static void main(String[] args) {
         try {
             String domain = args[0];
+            String secret = args[1];
 
             String ip = InetAddress.getLocalHost().getHostAddress();
             String serverURI = String.format("https://%s:%s/soap", ip, PORT);
@@ -47,7 +48,7 @@ public class UsersServer {
 
             server.setExecutor(Executors.newCachedThreadPool());
 
-            Endpoint soapUsersEndpoint = Endpoint.create(new UsersWS(domain));
+            Endpoint soapUsersEndpoint = Endpoint.create(new UsersWS(domain, secret));
 
             soapUsersEndpoint.publish(server.createContext(SOAP_USERS_PATH));
             server.start();

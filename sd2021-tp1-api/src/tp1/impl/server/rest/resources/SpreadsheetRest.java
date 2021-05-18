@@ -17,8 +17,8 @@ public class SpreadsheetRest implements RestSpreadsheets {
     public SpreadsheetRest() {
     }
 
-    public SpreadsheetRest(String domain, String serverURI) {
-        this.resource = new SpreadsheetResource(domain, serverURI);
+    public SpreadsheetRest(String domain, String serverURI, String secret) {
+        this.resource = new SpreadsheetResource(domain, serverURI, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws WebApplicationException {
@@ -41,8 +41,8 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range) throws WebApplicationException {
-        return this.parseResult(this.resource.importValues(sheetId, userId, range));
+    public String[][] importValues(String sheetId, String userId, String range, String secret) throws WebApplicationException {
+        return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
 
     }
 
@@ -67,8 +67,8 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password) throws WebApplicationException {
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password));
+    public void deleteUserSpreadsheets(String userId, String password, String secret) throws WebApplicationException {
+        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password, secret));
     }
 
     @Override

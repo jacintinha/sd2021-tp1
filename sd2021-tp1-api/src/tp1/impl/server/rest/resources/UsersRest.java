@@ -16,8 +16,8 @@ public class UsersRest implements RestUsers {
     public UsersRest() {
     }
 
-    public UsersRest(String domain) {
-        this.resource = new UsersResource(domain);
+    public UsersRest(String domain, String secret) {
+        this.resource = new UsersResource(domain, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws WebApplicationException {

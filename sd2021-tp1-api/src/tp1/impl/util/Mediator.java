@@ -148,21 +148,21 @@ public class Mediator {
         return 500;
     }
 
-    public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range) {
+    public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range, String secret) {
         System.out.println("Sending request to server.");
         if (serverUrl.split("/")[3].equals("rest")) {
-            return getSpreadsheetRangeRest(restSetUp(serverUrl, "/import"), userId, range);
+            return getSpreadsheetRangeRest(restSetUp(serverUrl, "/import"), userId, range, secret);
         }
-        return getSpreadsheetRangeSoap(soapSetUpSheets(serverUrl), userId, sheetId, range);
+        return getSpreadsheetRangeSoap(soapSetUpSheets(serverUrl), userId, sheetId, range, secret);
     }
 
-    public static String[][] getSpreadsheetRangeRest(WebTarget target, String userId, String range) {
+    public static String[][] getSpreadsheetRangeRest(WebTarget target, String userId, String range, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
             try {
-                Response r = target.queryParam("userId", userId).queryParam("range", range).request()
+                Response r = target.queryParam("userId", userId).queryParam("range", range).queryParam("secret", secret).request()
                         .accept(MediaType.APPLICATION_JSON).get();
 
                 if (r.getStatus() == 200 && r.hasEntity()) {
@@ -186,14 +186,14 @@ public class Mediator {
         return null;
     }
 
-    public static String[][] getSpreadsheetRangeSoap(SoapSpreadsheets spreadsheets, String userId, String sheetId, String range) {
+    public static String[][] getSpreadsheetRangeSoap(SoapSpreadsheets spreadsheets, String userId, String sheetId, String range, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
 
             try {
-                String[][] values = spreadsheets.importValues(sheetId, userId, range);
+                String[][] values = spreadsheets.importValues(sheetId, userId, range, secret);
                 System.out.println("Importing " + range);
 
                 return values;
@@ -215,22 +215,22 @@ public class Mediator {
         return null;
     }
 
-    public static int deleteSpreadsheets(String serverUrl, String userId, String password) {
+    public static int deleteSpreadsheets(String serverUrl, String userId, String password, String secret) {
         System.out.println("Sending request to server.");
         if (serverUrl.split("/")[3].equals("rest")) {
-            return deleteSpreadsheetsRest(restSetUp(serverUrl, RestSpreadsheets.PATH + "/delete"), userId, password);
+            return deleteSpreadsheetsRest(restSetUp(serverUrl, RestSpreadsheets.PATH + "/delete"), userId, password, secret);
         }
-        return deleteSpreadsheetsSoap(soapSetUpSheets(serverUrl), userId, password);
+        return deleteSpreadsheetsSoap(soapSetUpSheets(serverUrl), userId, password, secret);
     }
 
-    public static int deleteSpreadsheetsRest(WebTarget target, String userId, String password) {
+    public static int deleteSpreadsheetsRest(WebTarget target, String userId, String password, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
         // Deleting user's spreadsheets must be done eventually
         while (retries < 100) {
             try {
-                Response r = target.path(userId).queryParam("password", password).request().delete();
+                Response r = target.path(userId).queryParam("password", password).queryParam("secret", secret).request().delete();
 
                 return r.getStatus();
             } catch (ProcessingException pe) {
@@ -248,14 +248,14 @@ public class Mediator {
         return 500;
     }
 
-    public static int deleteSpreadsheetsSoap(SoapSpreadsheets spreadsheets, String userId, String password) {
+    public static int deleteSpreadsheetsSoap(SoapSpreadsheets spreadsheets, String userId, String password, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
         while (retries < 100) {
 
             try {
-                spreadsheets.deleteUserSpreadsheets(userId, password);
+                spreadsheets.deleteUserSpreadsheets(userId, password, secret);
                 System.out.println("Deleting " + userId + "'s spreadsheets.");
                 return 200;
             } catch (SheetsException e) {

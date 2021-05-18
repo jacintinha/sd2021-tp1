@@ -46,11 +46,11 @@ public interface Spreadsheets {
      *
      * @param userId   - The user requesting the values
      * @param sheetId  - the spreadsheet whose values are being retrieved.
-     * @param password - The password of the user performing the operation.
+     * @param secret - The secret necessary to run the function.
      * @return 200, if the operation is successful
      * 204, null, in case of no values
      */
-    Result<String[][]> importValues(String sheetId, String userId, String range);
+    Result<String[][]> importValues(String sheetId, String userId, String range, String secret);
 
 
     /**
@@ -119,7 +119,7 @@ public interface Spreadsheets {
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
-    Result<Void> deleteUserSpreadsheets(String userId, String password);
+    Result<Void> deleteUserSpreadsheets(String userId, String password, String secret);
 
 
 }

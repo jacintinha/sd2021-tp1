@@ -27,6 +27,7 @@ public class UsersServer {
     public static void main(String[] args) {
         try {
             String domain = args[0];
+            String secret = args[1];
 
             String ip = InetAddress.getLocalHost().getHostAddress();
 
@@ -34,7 +35,7 @@ public class UsersServer {
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
             ResourceConfig config = new ResourceConfig();
-            config.register(new UsersRest(domain));
+            config.register(new UsersRest(domain, secret));
 
             String serverURI = String.format("https://%s:%s/rest", ip, PORT);
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());

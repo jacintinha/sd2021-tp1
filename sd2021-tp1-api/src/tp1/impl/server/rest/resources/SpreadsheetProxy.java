@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
+import tp1.api.service.util.Result;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.server.rest.UsersServer;
@@ -23,14 +24,16 @@ public class SpreadsheetProxy implements RestSpreadsheets {
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
     private String domain;
     private String serverURI;
+    private String secret;
     private DropboxAPI dropbox;
 
     public SpreadsheetProxy() {
     }
 
-    public SpreadsheetProxy(String domain, String serverURI) {
+    public SpreadsheetProxy(String domain, String serverURI, String secret) {
         this.domain = domain;
         this.serverURI = serverURI;
+        this.secret = secret;
         dropbox = new DropboxAPI();
     }
 
@@ -140,7 +143,11 @@ public class SpreadsheetProxy implements RestSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range) {
+    public String[][] importValues(String sheetId, String userId, String range, String secret) {
+
+        if (isValidated(secret)) {
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        }
 
         Spreadsheet referencedSheet;
 
@@ -240,13 +247,13 @@ public class SpreadsheetProxy implements RestSpreadsheets {
 
                         // Intra-domain
                         if (sheetURL.startsWith(serverURI)) {
-                            return importValues(sheetId, owner, range);
+                            return importValues(sheetId, owner, range, secret);
                         }
 
                         // Inter-domain
                         String cacheId = sheetURL + "&" + range;
 
-                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
 
                         return values;
 //                        synchronized (sheetCache) {
@@ -427,11 +434,11 @@ public class SpreadsheetProxy implements RestSpreadsheets {
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password) {
+    public void deleteUserSpreadsheets(String userId, String password, String secret) {
         Log.info("deleteUserSpreadsheets : user = " + userId + "; pwd = " + password);
 
         // Check if data is valid, if not return HTTP CONFLICT (400)
-        if (userId == null) {
+        if (!isValidated(secret) || userId == null) {
             Log.info("UserId null.");
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
@@ -493,5 +500,9 @@ public class SpreadsheetProxy implements RestSpreadsheets {
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
         }
+    }
+
+    private boolean isValidated(String secret){
+        return this.secret.equals(secret);
     }
 }

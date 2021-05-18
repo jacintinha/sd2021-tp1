@@ -36,7 +36,7 @@ public class SpreadsheetServer {
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetRest(domain, serverURI));
+            config.register(new SpreadsheetRest(domain, serverURI, args[1]));
 
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());

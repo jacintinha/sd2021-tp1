@@ -88,12 +88,13 @@ public interface SoapSpreadsheets {
      * @param userId  - The user requesting the values
      * @param sheetId - the spreadsheet whose values are being retrieved.
      * @param range   - The range to import.
+     * @param secret - The secret needed to execute this function.
      * @return 200, values
      * 204, null, if no values
      * @throws SheetsException otherwise
      */
     @WebMethod
-    String[][] importValues(String sheetId, String userId, String range) throws SheetsException;
+    String[][] importValues(String sheetId, String userId, String range, String secret) throws SheetsException;
 
 
     /**
@@ -112,9 +113,10 @@ public interface SoapSpreadsheets {
      *
      * @param userId   - the user whose sheets will be deleted.
      * @param password - the password of the owner of the spreadsheets.
+     * @param secret - the secret needed for this function to execute.
      * @throws SheetsException otherwise
      */
     @WebMethod
-    void deleteUserSpreadsheets(String userId, String password) throws SheetsException;
+    void deleteUserSpreadsheets(String userId, String password, String secret) throws SheetsException;
 
 }

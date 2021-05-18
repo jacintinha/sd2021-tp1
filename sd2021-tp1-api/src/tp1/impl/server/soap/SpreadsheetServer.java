@@ -47,7 +47,7 @@ public class SpreadsheetServer {
 
             server.setExecutor(Executors.newCachedThreadPool());
 
-            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS(domain, serverURI));
+            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS(domain, serverURI, args[1]));
 
             soapSpreadsheetsEndpoint.publish(server.createContext(SOAP_SPREADSHEETS_PATH));
 

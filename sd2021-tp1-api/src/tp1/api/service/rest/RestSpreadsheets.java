@@ -63,7 +63,8 @@ public interface RestSpreadsheets {
      *
      * @param userId   - The user requesting the values
      * @param sheetId  - the spreadsheet whose values are being retrieved.
-     * @param password - The password of the user performing the operation.
+     * @param range - Range of the spreadsheet to be requested.
+     * @param secret - The secret necessary to run the function.
      * @return 200, if the operation is successful
      * 204, null, in case of no values
      */
@@ -71,7 +72,7 @@ public interface RestSpreadsheets {
     @Path("{sheetId}/import/")
     @Produces(MediaType.APPLICATION_JSON)
     String[][] importValues(@PathParam("sheetId") String sheetId,
-                            @QueryParam("userId") String userId, @QueryParam("range") String range);
+                            @QueryParam("userId") String userId, @QueryParam("range") String range, @QueryParam("secret") String secret);
 
 
     /**
@@ -153,11 +154,12 @@ public interface RestSpreadsheets {
      *
      * @param userId   - the user whose sheets will be deleted.
      * @param password - the password of the owner of the spreadsheets.
+     * @param secret - the secret to access/execute the function.
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
     @DELETE
     @Path("/delete/{userId}")
-    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("password") String password);
+    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("password") String password, @QueryParam("secret") String secret);
 
 }

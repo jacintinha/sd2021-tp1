@@ -15,8 +15,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     public SpreadsheetWS() {
     }
 
-    public SpreadsheetWS(String domain, String serverURI) {
-        this.resource = new SpreadsheetResource(domain, serverURI);
+    public SpreadsheetWS(String domain, String serverURI, String secret) {
+        this.resource = new SpreadsheetResource(domain, serverURI, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws SheetsException {
@@ -37,8 +37,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range) throws SheetsException {
-        return this.parseResult(this.resource.importValues(sheetId, userId, range));
+    public String[][] importValues(String sheetId, String userId, String range, String secret) throws SheetsException {
+        return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
     }
 
     @Override
@@ -62,8 +62,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password));
+    public void deleteUserSpreadsheets(String userId, String password, String secret) throws SheetsException {
+        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password, secret));
     }
 
     @Override

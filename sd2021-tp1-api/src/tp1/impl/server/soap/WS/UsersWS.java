@@ -19,8 +19,8 @@ public class UsersWS implements SoapUsers {
     public UsersWS() {
     }
 
-    public UsersWS(String domain) {
-        this.resource = new UsersResource(domain);
+    public UsersWS(String domain, String secret) {
+        this.resource = new UsersResource(domain, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws UsersException {

@@ -26,13 +26,15 @@ public class SpreadsheetResource implements Spreadsheets {
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
     private String domain;
     private String serverURI;
+    private String secret;
 
     public SpreadsheetResource() {
     }
 
-    public SpreadsheetResource(String domain, String serverURI) {
+    public SpreadsheetResource(String domain, String serverURI, String secret) {
         this.domain = domain;
         this.serverURI = serverURI;
+        this.secret = secret;
     }
 
     @Override
@@ -144,7 +146,11 @@ public class SpreadsheetResource implements Spreadsheets {
     }
 
     @Override
-    public Result<String[][]> importValues(String sheetId, String userId, String range) {
+    public Result<String[][]> importValues(String sheetId, String userId, String range, String secret) {
+
+        if (!isValidated(secret)) {
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
+        }
 
         Spreadsheet referencedSheet;
 
@@ -244,13 +250,13 @@ public class SpreadsheetResource implements Spreadsheets {
 
                         // Intra-domain
                         if (sheetURL.startsWith(serverURI)) {
-                            return importValues(sheetId, owner, range).value();
+                            return importValues(sheetId, owner, range, secret).value();
                         }
 
                         // Inter-domain
                         String cacheId = sheetURL + "&" + range;
 
-                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range);
+                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
 
                         synchronized (sheetCache) {
                             if (values != null) {
@@ -426,11 +432,11 @@ public class SpreadsheetResource implements Spreadsheets {
     }
 
     @Override
-    public Result<Void> deleteUserSpreadsheets(String userId, String password) {
+    public Result<Void> deleteUserSpreadsheets(String userId, String password, String secret) {
         Log.info("deleteUserSpreadsheets : user = " + userId + "; pwd = " + password);
 
         // Check if data is valid, if not return HTTP CONFLICT (400)
-        if (userId == null) {
+        if (!isValidated(secret) || userId == null) {
             Log.info("UserId null.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
@@ -494,5 +500,10 @@ public class SpreadsheetResource implements Spreadsheets {
             }
         }
         return Result.ok(null);
+    }
+
+    private boolean isValidated(String secret){
+        Log.severe("COMPARING STRINGS: this server's: " + this.secret + "\n and the received: " + secret);
+        return this.secret.equals(secret);
     }
 }
