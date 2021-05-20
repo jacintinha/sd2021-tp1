@@ -145,7 +145,7 @@ public class SpreadsheetProxy implements RestSpreadsheets {
     @Override
     public String[][] importValues(String sheetId, String userId, String range, String secret) {
 
-        if (isValidated(secret)) {
+        if (!isValidated(secret)) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
