@@ -1,16 +1,22 @@
 package tp1.impl.server.rest;
 
 import jakarta.inject.Singleton;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import tp1.impl.server.rest.resources.SpreadsheetRest;
 import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
+import tp1.impl.util.zookeeper.ZookeeperProcessor;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.List;
 import java.util.logging.Logger;
 
 @Singleton
@@ -38,12 +44,34 @@ public class SpreadsheetServer {
             ResourceConfig config = new ResourceConfig();
             config.register(new SpreadsheetRest(domain, serverURI, args[1]));
 
-
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 
             Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
 
             Discovery.getInstance().start(domain, Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
+
+//            ZookeeperProcessor zk = new ZookeeperProcessor( "localhost:2181,kafka:2181");
+            ZookeeperProcessor zk = ZookeeperProcessor.getInstance("localhost:2181,kafka:2181");
+            String newPath = zk.write("/"+ domain, CreateMode.PERSISTENT);
+
+            if(newPath != null) {
+                Log.info("Created znode: " + newPath);
+            } else {
+                Log.info("Node already existed");
+            }
+
+            newPath = zk.write("/" + domain + "/sheets_", CreateMode.EPHEMERAL_SEQUENTIAL);
+            Log.info("Created child znode: " + newPath);
+
+            // TODO
+//            zk.getChildren( "/" + domain , new Watcher() {
+//                @Override
+//                public void process(WatchedEvent event) {
+//                    List<String> lst = zk.getChildren( "/" + domain, this);
+//                    lst.stream().forEach( e -> System.out.println(e));
+//                    System.out.println();
+//                }
+//            });
 
         } catch (Exception e) {
             Log.severe(e.getMessage());

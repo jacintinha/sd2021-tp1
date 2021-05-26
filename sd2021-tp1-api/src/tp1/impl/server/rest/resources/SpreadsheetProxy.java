@@ -5,7 +5,6 @@ import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
-import tp1.api.service.util.Result;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.server.rest.UsersServer;
