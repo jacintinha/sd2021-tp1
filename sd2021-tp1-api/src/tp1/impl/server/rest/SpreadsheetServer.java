@@ -50,31 +50,43 @@ public class SpreadsheetServer {
 
             Discovery.getInstance().start(domain, Discovery.DISCOVERY_ADDR, SERVICE, serverURI);
 
-//            ZookeeperProcessor zk = new ZookeeperProcessor( "localhost:2181,kafka:2181");
             ZookeeperProcessor zk = ZookeeperProcessor.getInstance("localhost:2181,kafka:2181");
-            String newPath = zk.write("/"+ domain, CreateMode.PERSISTENT);
+            String persistentPath = zk.write("/"+ domain, CreateMode.PERSISTENT);
 
-            if(newPath != null) {
-                Log.info("Created znode: " + newPath);
+            if(persistentPath != null) {
+                Log.info("Created znode: " + persistentPath);
             } else {
                 Log.info("Node already existed");
             }
 
-            newPath = zk.write("/" + domain + "/sheets_", CreateMode.EPHEMERAL_SEQUENTIAL);
+            String newPath = zk.write("/" + domain + "/sheets_", CreateMode.EPHEMERAL_SEQUENTIAL);
             Log.info("Created child znode: " + newPath);
 
+            System.out.println(newPath);
+
+            // TODO ask
+            Thread.sleep(5*1000);
+
             // TODO
-//            zk.getChildren( "/" + domain , new Watcher() {
-//                @Override
-//                public void process(WatchedEvent event) {
-//                    List<String> lst = zk.getChildren( "/" + domain, this);
-//                    lst.stream().forEach( e -> System.out.println(e));
+            List<String> l = zk.getChildren("/" + domain, new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                    List<String> lst = zk.getChildren("/" + domain, this);
+//                    lst.stream().forEach(e -> System.out.println(e));
 //                    System.out.println();
-//                }
-//            });
+                    isPrimary(newPath, domain, lst.get(0));
+                }
+            });
+
+            isPrimary(newPath, domain, l.get(0));
 
         } catch (Exception e) {
             Log.severe(e.getMessage());
         }
+    }
+
+    public static void isPrimary(String newPath, String domain, String path) {
+        System.out.println("log: checking if primary");
+        System.out.println("isPrimary " + ("/"+domain+"/"+path).equals(newPath));
     }
 }
