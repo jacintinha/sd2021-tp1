@@ -1,15 +1,20 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.util.Result;
 import tp1.api.service.util.Spreadsheets;
 import tp1.impl.engine.SpreadsheetEngineImpl;
+import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.server.rest.UsersServer;
 import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
+import tp1.impl.util.google.GoogleAPI;
+import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.util.CellRange;
 
 import java.net.URI;
@@ -27,6 +32,7 @@ public class SpreadsheetResource implements Spreadsheets {
     private String domain;
     private String serverURI;
     private String secret;
+    private GoogleAPI googleAPI;
 
     public SpreadsheetResource() {
     }
@@ -35,10 +41,14 @@ public class SpreadsheetResource implements Spreadsheets {
         this.domain = domain;
         this.serverURI = serverURI;
         this.secret = secret;
+        this.googleAPI = new GoogleAPI();
     }
 
     @Override
     public Result<String> createSpreadsheet(Spreadsheet sheet, String password) {
+
+
+
         Log.info("createSpreadsheet : " + sheet);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (password == null || !checkSpreadsheet(sheet)) {
@@ -254,6 +264,11 @@ public class SpreadsheetResource implements Spreadsheets {
                         }
 
                         // Inter-domain
+
+                        if (sheetURL.startsWith("https://sheets.googleapis.com/v4/spreadsheets/")) {
+                            return googleAPI.getSpreadsheetRange(sheetId, range);
+                        }
+
                         String cacheId = sheetURL + "&" + range;
 
                         String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);

@@ -8,6 +8,8 @@ import tp1.api.Spreadsheet;
 @Path(RestSpreadsheets.PATH)
 public interface RestSpreadsheets {
 
+    String HEADER_VERSION = "sheetsserver-version";
+
     String PATH = "/spreadsheets";
 
     /**

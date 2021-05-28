@@ -2,7 +2,6 @@ package tp1.impl.util.zookeeper;
 
 import java.util.List;
 
-import com.gembox.internal.core.Keep;
 import jakarta.inject.Singleton;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -16,6 +15,7 @@ public class ZookeeperProcessor implements Watcher {
 
 	private static ZookeeperProcessor instance;
 
+	private String primaryURL;
 	private ZooKeeper zk;
 
 	public static ZookeeperProcessor getInstance(String hostPort) throws Exception {
@@ -30,7 +30,15 @@ public class ZookeeperProcessor implements Watcher {
 	 */
 	public ZookeeperProcessor( String hostPort) throws Exception {
 		zk = new ZooKeeper(hostPort, 3000, this);
+		primaryURL = "";
+	}
 
+	public void setPrimary(String primaryURL) {
+		this.primaryURL = primaryURL;
+	}
+
+	public String getPrimary() {
+		return this.primaryURL;
 	}
 
 	public String write( String path, CreateMode mode) {
