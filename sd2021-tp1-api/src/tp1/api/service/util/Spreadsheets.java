@@ -1,6 +1,7 @@
 package tp1.api.service.util;
 
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
 
 
 public interface Spreadsheets {
@@ -44,13 +45,13 @@ public interface Spreadsheets {
     /**
      * Retrieves the calculated values of a spreadsheet.
      *
-     * @param userId   - The user requesting the values
      * @param sheetId  - the spreadsheet whose values are being retrieved.
+     * @param userId   - The user requesting the values
      * @param secret - The secret necessary to run the function.
      * @return 200, if the operation is successful
      * 204, null, in case of no values
      */
-    Result<String[][]> importValues(String sheetId, String userId, String range, String secret);
+    Result<RangeValues> importValues(String sheetId, String userId, String range, String secret);
 
 
     /**

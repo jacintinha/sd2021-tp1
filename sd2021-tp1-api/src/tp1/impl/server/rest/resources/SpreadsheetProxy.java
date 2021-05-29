@@ -2,6 +2,7 @@ package tp1.impl.server.rest.resources;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.w3c.dom.ranges.Range;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
@@ -9,6 +10,7 @@ import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.server.rest.UsersServer;
 import tp1.impl.util.Mediator;
+import tp1.impl.util.RangeValues;
 import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.dropbox.DropboxAPI;
 import tp1.impl.util.dropbox.arguments.PathV2Args;
@@ -142,7 +144,7 @@ public class SpreadsheetProxy implements RestSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range, String secret) {
+    public RangeValues importValues(String sheetId, String userId, String range, String secret) {
 
         if (!isValidated(secret)) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
@@ -158,7 +160,8 @@ public class SpreadsheetProxy implements RestSpreadsheets {
 
             Set<String> shared = referencedSheet.getSharedWith();
             if (shared != null && shared.contains(userId)) {
-                return this.getSheetRangeValues(referencedSheet, range);
+                // TODO
+                return new RangeValues(this.getSheetRangeValues(referencedSheet, range), -1);
             }
         }
         return null;
@@ -246,13 +249,13 @@ public class SpreadsheetProxy implements RestSpreadsheets {
 
                         // Intra-domain
                         if (sheetURL.startsWith(serverURI)) {
-                            return importValues(sheetId, owner, range, secret);
+                            return importValues(sheetId, owner, range, secret).getValues();
                         }
 
                         // Inter-domain
                         String cacheId = sheetURL + "&" + range;
 
-                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
+                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret).getValues();
 
                         return values;
 //                        synchronized (sheetCache) {

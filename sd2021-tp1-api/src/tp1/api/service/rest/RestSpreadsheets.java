@@ -3,6 +3,7 @@ package tp1.api.service.rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
 
 
 @Path(RestSpreadsheets.PATH)
@@ -63,8 +64,8 @@ public interface RestSpreadsheets {
     /**
      * Retrieves the calculated values of a spreadsheet.
      *
-     * @param userId   - The user requesting the values
      * @param sheetId  - the spreadsheet whose values are being retrieved.
+     * @param userId   - The user requesting the values
      * @param range - Range of the spreadsheet to be requested.
      * @param secret - The secret necessary to run the function.
      * @return 200, if the operation is successful
@@ -73,7 +74,7 @@ public interface RestSpreadsheets {
     @GET
     @Path("{sheetId}/import/")
     @Produces(MediaType.APPLICATION_JSON)
-    String[][] importValues(@PathParam("sheetId") String sheetId,
+    RangeValues importValues(@PathParam("sheetId") String sheetId,
                             @QueryParam("userId") String userId, @QueryParam("range") String range, @QueryParam("secret") String secret);
 
 

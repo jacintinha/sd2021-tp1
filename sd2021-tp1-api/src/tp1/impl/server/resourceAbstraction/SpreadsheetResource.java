@@ -1,20 +1,19 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
 import tp1.api.service.util.Result;
 import tp1.api.service.util.Spreadsheets;
+import tp1.impl.cache.Cache;
+import tp1.impl.cache.CacheEntry;
 import tp1.impl.engine.SpreadsheetEngineImpl;
-import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.server.rest.UsersServer;
 import tp1.impl.util.Mediator;
+import tp1.impl.util.RangeValues;
 import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.google.GoogleAPI;
-import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.util.CellRange;
 
 import java.net.URI;
@@ -25,8 +24,9 @@ import java.util.logging.Logger;
 public class SpreadsheetResource implements Spreadsheets {
 
     private final Map<String, Spreadsheet> sheets = new HashMap<>();
+    private final Map<String, Long> lastModified = new HashMap<>();
     private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
-    private final Map<String, String[][]> sheetCache = new HashMap<>();
+    private final Cache sheetCache = new Cache();
 
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
     private String domain;
@@ -46,9 +46,6 @@ public class SpreadsheetResource implements Spreadsheets {
 
     @Override
     public Result<String> createSpreadsheet(Spreadsheet sheet, String password) {
-
-
-
         Log.info("createSpreadsheet : " + sheet);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (password == null || !checkSpreadsheet(sheet)) {
@@ -68,6 +65,7 @@ public class SpreadsheetResource implements Spreadsheets {
         // Add the spreadsheet to the map of spreadsheets
         synchronized (this) {
             this.sheets.put(sheet.getSheetId(), sheet);
+            this.lastModified.put(uuid, System.nanoTime());
 
             Set<String> ownersSheets = this.sheetsByOwner.get(sheet.getOwner());
 
@@ -156,8 +154,7 @@ public class SpreadsheetResource implements Spreadsheets {
     }
 
     @Override
-    public Result<String[][]> importValues(String sheetId, String userId, String range, String secret) {
-
+    public Result<RangeValues> importValues(String sheetId, String userId, String range, String secret) {
         if (!isValidated(secret)) {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
@@ -172,7 +169,9 @@ public class SpreadsheetResource implements Spreadsheets {
 
             Set<String> shared = referencedSheet.getSharedWith();
             if (shared != null && shared.contains(userId)) {
-                return Result.ok(this.getSheetRangeValues(referencedSheet, range));
+                System.out.println(Arrays.deepToString(this.getSheetRangeValues(referencedSheet, range)));
+                System.out.println(this.lastModified.get(sheetId));
+                return Result.ok(new RangeValues(this.getSheetRangeValues(referencedSheet, range), this.lastModified.get(sheetId)));
             }
         }
         return Result.ok(null);
@@ -260,29 +259,50 @@ public class SpreadsheetResource implements Spreadsheets {
 
                         // Intra-domain
                         if (sheetURL.startsWith(serverURI)) {
-                            return importValues(sheetId, owner, range, secret).value();
+                            return importValues(sheetId, owner, range, secret).value().getValues();
                         }
 
                         // Inter-domain
-
                         if (sheetURL.startsWith("https://sheets.googleapis.com/v4/spreadsheets/")) {
                             return googleAPI.getSpreadsheetRange(sheetId, range);
                         }
 
                         String cacheId = sheetURL + "&" + range;
 
-                        String[][] values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
+                        // Check if T-Tc < EXPIRED_TIME
+                        CacheEntry entry = sheetCache.getEntry(cacheId);
 
-                        synchronized (sheetCache) {
+                        if (entry == null) {
+                            Log.severe("Value was not cached.");
+                            RangeValues values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
                             if (values != null) {
-                                sheetCache.put(cacheId, values);
-                                return values;
+                                sheetCache.newEntry(cacheId, values.getLastModified(), System.nanoTime(), values.getValues());
+                                return values.getValues();
                             }
-
-                            // If we can't connect, return the data in cache
-                            Log.info("Getting values from cache.");
-                            return sheetCache.get(cacheId);
+                            return null;
                         }
+
+                        if (System.nanoTime() - entry.getTC() < Cache.EXPIRE_TIME) {
+                            Log.severe("Returning from cache.");
+                            return entry.getValues();
+                        }
+
+                        Log.severe("Cache outdated, getting from server.");
+
+                        RangeValues values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
+
+                        // If null means we couldn't access
+                        if (values == null) {
+                            Log.severe("Couldn't access server, sending outdated cache.");
+                            return entry.getValues();
+                        }
+
+                        // Update cache
+                        sheetCache.updateEntry(cacheId, values.getValues(), values.getLastModified());
+
+                        Log.severe("Sending values obtained directly from server.");
+                        return values.getValues();
+
                         // If cache doesn't have the data and we can't connect to the server
                         // return null for the engine
                     }
@@ -313,13 +333,20 @@ public class SpreadsheetResource implements Spreadsheets {
                 }
 
                 // If user is owner
-                if (sheet.getOwner().equals(userId))
+                if (sheet.getOwner().equals(userId)) {
                     sheet.setCellRawValue(cell, rawValue);
+                    this.lastModified.put(sheetId, System.nanoTime());
+                    return Result.ok(null);
+                }
+
                 // If user is in shared
                 Set<String> sharedWith = sheet.getSharedWith();
                 String sharedUser = userId + "@" + this.domain;
-                if (sharedWith != null && sharedWith.contains(sharedUser))
+                if (sharedWith != null && sharedWith.contains(sharedUser)) {
                     sheet.setCellRawValue(cell, rawValue);
+                    this.lastModified.put(sheetId, System.nanoTime());
+                    return Result.ok(null);
+                }
             }
         } else {
             return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(userCode).name()));
@@ -382,6 +409,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
             shared.add(userId);
             sheet.setSharedWith(shared);
+            this.lastModified.put(sheetId, System.nanoTime());
         }
         return Result.ok(null);
     }
@@ -440,6 +468,7 @@ public class SpreadsheetResource implements Spreadsheets {
                 }
 
                 sheet.setSharedWith(shared);
+                this.lastModified.put(sheetId, System.nanoTime());
             }
 
         }
@@ -508,6 +537,7 @@ public class SpreadsheetResource implements Spreadsheets {
             if (userStatusCode == 200) {
                 this.sheets.remove(sheetId);
                 this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
+                this.lastModified.remove(sheetId);
             } else if (userStatusCode == 403) {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             } else {
@@ -518,7 +548,6 @@ public class SpreadsheetResource implements Spreadsheets {
     }
 
     private boolean isValidated(String secret){
-        Log.severe("COMPARING STRINGS: this server's: " + this.secret + "\n and the received: " + secret);
         return this.secret.equals(secret);
     }
 }

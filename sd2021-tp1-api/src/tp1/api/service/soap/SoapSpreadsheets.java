@@ -3,6 +3,7 @@ package tp1.api.service.soap;
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebService;
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
 
 @WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
 public interface SoapSpreadsheets {
@@ -94,7 +95,7 @@ public interface SoapSpreadsheets {
      * @throws SheetsException otherwise
      */
     @WebMethod
-    String[][] importValues(String sheetId, String userId, String range, String secret) throws SheetsException;
+    RangeValues importValues(String sheetId, String userId, String range, String secret) throws SheetsException;
 
 
     /**

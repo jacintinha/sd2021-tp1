@@ -6,6 +6,7 @@ import tp1.api.service.soap.SheetsException;
 import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
+import tp1.impl.util.RangeValues;
 
 @WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
 public class SpreadsheetWS implements SoapSpreadsheets {
@@ -37,7 +38,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range, String secret) throws SheetsException {
+    public RangeValues importValues(String sheetId, String userId, String range, String secret) throws SheetsException {
         return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
     }
 

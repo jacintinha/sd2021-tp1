@@ -24,6 +24,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 
 public class Mediator {
 
@@ -148,7 +149,7 @@ public class Mediator {
         return 500;
     }
 
-    public static String[][] getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range, String secret) {
+    public static RangeValues getSpreadsheetRange(String serverUrl, String userId, String sheetId, String range, String secret) {
         System.out.println("Sending request to server.");
         if (serverUrl.split("/")[3].equals("rest")) {
             return getSpreadsheetRangeRest(restSetUp(serverUrl, "/import"), userId, range, secret);
@@ -156,7 +157,7 @@ public class Mediator {
         return getSpreadsheetRangeSoap(soapSetUpSheets(serverUrl), userId, sheetId, range, secret);
     }
 
-    public static String[][] getSpreadsheetRangeRest(WebTarget target, String userId, String range, String secret) {
+    public static RangeValues getSpreadsheetRangeRest(WebTarget target, String userId, String range, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
@@ -166,7 +167,9 @@ public class Mediator {
                         .accept(MediaType.APPLICATION_JSON).get();
 
                 if (r.getStatus() == 200 && r.hasEntity()) {
-                    return r.readEntity(String[][].class);
+                    System.out.println("Had entity");
+                    System.out.println(r.getEntity().toString());
+                    return r.readEntity(RangeValues.class);
                 } else
                     System.out.println("Error, HTTP error status: " + r.getStatus());
 
@@ -186,15 +189,22 @@ public class Mediator {
         return null;
     }
 
-    public static String[][] getSpreadsheetRangeSoap(SoapSpreadsheets spreadsheets, String userId, String sheetId, String range, String secret) {
+    public static RangeValues getSpreadsheetRangeSoap(SoapSpreadsheets spreadsheets, String userId, String sheetId, String range, String secret) {
         System.out.println("Sending request to server.");
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
 
             try {
-                String[][] values = spreadsheets.importValues(sheetId, userId, range, secret);
                 System.out.println("Importing " + range);
+                RangeValues values = spreadsheets.importValues(sheetId, userId, range, secret);
+
+                if (values == null ) {
+                    System.out.println("VALUES WAS NULL");
+                } else {
+                    System.out.println(Arrays.deepToString(values.getValues()));
+                    System.out.println(values.getLastModified());
+                }
 
                 return values;
             } catch (SheetsException e) {
