@@ -23,4 +23,13 @@ public class RangeValues {
     public long getLastModified() {
         return this.lastModified;
     }
+
+    public void setValues(String[][] values) {
+        this.values = values;
+    }
+
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
 }
+
