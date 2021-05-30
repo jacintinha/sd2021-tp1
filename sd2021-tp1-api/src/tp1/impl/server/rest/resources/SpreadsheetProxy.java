@@ -35,7 +35,7 @@ public class SpreadsheetProxy implements RestSpreadsheets {
         this.domain = domain;
         this.serverURI = serverURI;
         this.secret = secret;
-        dropbox = new DropboxAPI();
+        this.dropbox = new DropboxAPI();
     }
 
     @Override
@@ -59,14 +59,14 @@ public class SpreadsheetProxy implements RestSpreadsheets {
 
         // Add the spreadsheet to the map of spreadsheets
         synchronized (this) {
-
             // Write to dropbox
             this.dropbox.createFile(this.domain+"/"+sheet.getSheetId(), sheet);
 
             String sheetsByOwnerPath = this.domain + "/" + sheet.getOwner();
 
             // Sheets by owner
-            this.dropbox.createDirectory(sheetsByOwnerPath);
+//            this.dropbox.createDirectory(sheetsByOwnerPath);
+            Log.severe("Creating owner folder for " + uuid);
             this.dropbox.createFile(sheetsByOwnerPath + "/" + sheet.getSheetId(), sheet.getSheetId());
 
             return sheet.getSheetId();

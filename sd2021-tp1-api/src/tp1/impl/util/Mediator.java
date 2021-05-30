@@ -167,8 +167,6 @@ public class Mediator {
                         .accept(MediaType.APPLICATION_JSON).get();
 
                 if (r.getStatus() == 200 && r.hasEntity()) {
-                    System.out.println("Had entity");
-                    System.out.println(r.getEntity().toString());
                     return r.readEntity(RangeValues.class);
                 } else
                     System.out.println("Error, HTTP error status: " + r.getStatus());

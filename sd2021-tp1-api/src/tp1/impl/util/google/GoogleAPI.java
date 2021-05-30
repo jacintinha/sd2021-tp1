@@ -1,6 +1,5 @@
 package tp1.impl.util.google;
 
-import com.google.gson.Gson;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -10,8 +9,6 @@ import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import tp1.config.GoogleSheetsConfig;
-
-import java.util.Arrays;
 
 public class GoogleAPI {
 
@@ -24,7 +21,6 @@ public class GoogleAPI {
 
     public GoogleAPI () {
     }
-
 
     public String[][] getSpreadsheetRange(String sheetId, String range) {
         String url =  String.format(GET_RANGE, sheetId, range);
@@ -41,17 +37,12 @@ public class GoogleAPI {
 
         int retries = 0;
         while(retries < MAX_RETRIES) {
-
             try {
                 Response r = target.queryParam("key", GoogleSheetsConfig.API_KEY).request().accept(MediaType.APPLICATION_JSON).get();
-                String[][] list = r.readEntity(String[][].class);
+                GoogleResult list = r.readEntity(GoogleResult.class);
 
-                System.out.println(Arrays.deepToString(list));
-
-                return list;
-    //            return r.getStatus();
+                return list.getValues();
             } catch (ProcessingException pe) {
-                System.out.println("USERS: Timeout occurred");
                 pe.printStackTrace();
                 retries++;
                 try {

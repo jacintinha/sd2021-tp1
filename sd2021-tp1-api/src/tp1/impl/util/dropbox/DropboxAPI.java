@@ -45,7 +45,7 @@ public class DropboxAPI {
 
     private final Gson json;
 
-    public  DropboxAPI() {
+    public DropboxAPI() {
         service = new ServiceBuilder(apiKey).apiSecret(apiSecret).build(DropboxApi20.INSTANCE);
         accessToken = new OAuth2AccessToken(accessTokenStr);
         json = new Gson();
@@ -59,7 +59,7 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, createFolder);
 
-        Response r = null;
+        Response r;
 
         try {
             r = service.execute(createFolder);
@@ -182,7 +182,7 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, getFile);
 
-        Response r = null;
+        Response r;
 
         try {
             r = service.execute(getFile);

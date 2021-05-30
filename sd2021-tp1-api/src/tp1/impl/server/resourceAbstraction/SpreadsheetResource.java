@@ -263,7 +263,7 @@ public class SpreadsheetResource implements Spreadsheets {
                         }
 
                         // Inter-domain
-                        if (sheetURL.startsWith("https://sheets.googleapis.com/v4/spreadsheets/")) {
+                        if (sheetURL.startsWith("https://sheets.googleapis.com/")) {
                             return googleAPI.getSpreadsheetRange(sheetId, range);
                         }
 

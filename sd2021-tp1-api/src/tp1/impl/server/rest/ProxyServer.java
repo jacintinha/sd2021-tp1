@@ -53,7 +53,6 @@ public class ProxyServer {
             ResourceConfig config = new ResourceConfig();
             config.register(new SpreadsheetProxy(domain, serverURI, secret));
 
-
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 
             Log.info(String.format("%s Server ready @ %s\n", SERVICE, serverURI));
