@@ -1,7 +1,5 @@
 package tp1.impl.util.dropbox.arguments;
 
-import tp1.api.Spreadsheet;
-
 public class CreateSpreadsheetV2Args {
     final String path;
     final String mode;

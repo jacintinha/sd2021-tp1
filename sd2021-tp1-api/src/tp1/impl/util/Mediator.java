@@ -177,7 +177,8 @@ public class Mediator {
                 pe.printStackTrace();
                 retries++;
                 try {
-                    Thread.sleep(RETRY_PERIOD / 100);
+                    // TODO removed / 100
+                    Thread.sleep(RETRY_PERIOD);
                 } catch (InterruptedException e) {
                     // nothing to be done here, if this happens we will just retry sooner.
                 }
@@ -195,16 +196,7 @@ public class Mediator {
 
             try {
                 System.out.println("Importing " + range);
-                RangeValues values = spreadsheets.importValues(sheetId, userId, range, secret);
-
-                if (values == null ) {
-                    System.out.println("VALUES WAS NULL");
-                } else {
-                    System.out.println(Arrays.deepToString(values.getValues()));
-                    System.out.println(values.getLastModified());
-                }
-
-                return values;
+                return spreadsheets.importValues(sheetId, userId, range, secret);
             } catch (SheetsException e) {
                 System.out.println("Could not import range: " + range);
                 return null;

@@ -5,6 +5,7 @@ import org.apache.zookeeper.*;
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import tp1.impl.server.rest.resources.SpreadsheetRest;
+import tp1.impl.storage.Storage;
 import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
@@ -39,7 +40,7 @@ public class SpreadsheetServer {
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetRest(domain, serverURI, args[1]));
+            config.register(new SpreadsheetRest(domain, serverURI, Storage.INTERNAL_STORAGE, args[1]));
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 

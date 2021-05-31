@@ -18,8 +18,8 @@ public class SpreadsheetRest implements RestSpreadsheets {
     public SpreadsheetRest() {
     }
 
-    public SpreadsheetRest(String domain, String serverURI, String secret) {
-        this.resource = new SpreadsheetResource(domain, serverURI, secret);
+    public SpreadsheetRest(String domain, String serverURI, int storage, String secret) {
+        this.resource = new SpreadsheetResource(domain, serverURI, storage, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws WebApplicationException {

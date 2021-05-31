@@ -36,7 +36,7 @@ public class GoogleAPI {
         WebTarget target = client.target(url);
 
         int retries = 0;
-        while(retries < MAX_RETRIES) {
+        while( retries < MAX_RETRIES ) {
             try {
                 Response r = target.queryParam("key", GoogleSheetsConfig.API_KEY).request().accept(MediaType.APPLICATION_JSON).get();
                 GoogleResult list = r.readEntity(GoogleResult.class);

@@ -8,6 +8,7 @@ import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
+import tp1.impl.storage.Storage;
 import tp1.impl.util.RangeValues;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
 
@@ -26,7 +27,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public SpreadsheetRep(String domain, String serverURI, String secret, ZookeeperProcessor zk) {
         this.zk = zk;
         this.serverURI = serverURI;
-        this.resource = new SpreadsheetResource(domain, serverURI, secret);
+        this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws WebApplicationException {

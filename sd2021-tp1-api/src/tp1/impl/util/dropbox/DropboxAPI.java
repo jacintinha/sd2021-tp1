@@ -158,9 +158,11 @@ public class DropboxAPI {
         try {
             r = service.execute(createFile);
         } catch (Exception e) {
+            System.out.println("HELLO TEAM");
             e.printStackTrace();
             return false;
         }
+
         //TODO Codes (print message?)
         if(r.getCode() == 200 || r.getCode() == 409) {
             return true;
@@ -191,11 +193,15 @@ public class DropboxAPI {
             return null;
         }
         //TODO Codes
+
+        if (r.getCode() == 429) {
+            System.out.println("429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429");
+            System.exit(69);
+        }
+
         if(r.getCode() == 200) {
             try {
-                Spreadsheet sheet = this.json.fromJson(r.getBody(), Spreadsheet.class);
-                System.out.println(sheet.toString());
-                return sheet;
+                return this.json.fromJson(r.getBody(), Spreadsheet.class);
             } catch (IOException e) {
                 System.out.println("No body in the response");
                 return null;
@@ -211,12 +217,13 @@ public class DropboxAPI {
         }
     }
 
+    // rootDirectory has the form: domain-n/
     public List<PathV2Args> listFolder(String rootDirectory, String user) {
         List<PathV2Args> directoryContents = new LinkedList<>();
 
         OAuthRequest listDirectory = new OAuthRequest(Verb.POST, LIST_FOLDER_URL);
         listDirectory.addHeader("Content-Type", JSON_CONTENT_TYPE);
-        listDirectory.setPayload(json.toJson(new ListFolderArgs("/" + rootDirectory + "/" + user, false)));
+        listDirectory.setPayload(json.toJson(new ListFolderArgs("/" + rootDirectory + user, false)));
 
         service.signRequest(accessToken, listDirectory);
 
@@ -235,7 +242,7 @@ public class DropboxAPI {
                 ListFolderReturn reply = json.fromJson(r.getBody(), ListFolderReturn.class);
 
                 for(FolderEntry e: reply.getEntries()) {
-                    directoryContents.add(new PathV2Args("/" + rootDirectory + "/" + e.toString()));
+                    directoryContents.add(new PathV2Args("/" + rootDirectory + e.toString()));
                 }
 
                 if(reply.has_more()) {

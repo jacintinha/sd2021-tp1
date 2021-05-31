@@ -10,6 +10,9 @@ import tp1.impl.cache.Cache;
 import tp1.impl.cache.CacheEntry;
 import tp1.impl.engine.SpreadsheetEngineImpl;
 import tp1.impl.server.rest.UsersServer;
+import tp1.impl.storage.ExternalStorage;
+import tp1.impl.storage.InternalStorage;
+import tp1.impl.storage.Storage;
 import tp1.impl.util.Mediator;
 import tp1.impl.util.RangeValues;
 import tp1.impl.util.discovery.Discovery;
@@ -23,25 +26,29 @@ import java.util.logging.Logger;
 @Singleton
 public class SpreadsheetResource implements Spreadsheets {
 
-    private final Map<String, Spreadsheet> sheets = new HashMap<>();
-    private final Map<String, Long> lastModified = new HashMap<>();
-    private final Map<String, Set<String>> sheetsByOwner = new HashMap<>();
-    private final Cache sheetCache = new Cache();
 
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
     private String domain;
     private String serverURI;
     private String secret;
     private GoogleAPI googleAPI;
+    private Storage storage;
+    private final Cache sheetCache = new Cache();
+
 
     public SpreadsheetResource() {
     }
 
-    public SpreadsheetResource(String domain, String serverURI, String secret) {
+    public SpreadsheetResource(String domain, String serverURI, int storage, String secret) {
         this.domain = domain;
         this.serverURI = serverURI;
         this.secret = secret;
         this.googleAPI = new GoogleAPI();
+        if (storage == Storage.INTERNAL_STORAGE) {
+            this.storage = new InternalStorage();
+        } else {
+            this.storage = new ExternalStorage(this.domain);
+        }
     }
 
     @Override
@@ -64,18 +71,8 @@ public class SpreadsheetResource implements Spreadsheets {
 
         // Add the spreadsheet to the map of spreadsheets
         synchronized (this) {
-            this.sheets.put(sheet.getSheetId(), sheet);
-            this.lastModified.put(uuid, System.nanoTime());
 
-            Set<String> ownersSheets = this.sheetsByOwner.get(sheet.getOwner());
-
-            if (ownersSheets == null) {
-                ownersSheets = new HashSet<>();
-            }
-
-            ownersSheets.add(sheet.getSheetId());
-
-            this.sheetsByOwner.put(sheet.getOwner(), ownersSheets);
+            this.storage.put(sheet);
 
             return Result.ok(sheet.getSheetId());
         }
@@ -109,7 +106,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
         Spreadsheet sheet;
         synchronized (this) {
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -162,18 +159,17 @@ public class SpreadsheetResource implements Spreadsheets {
         Spreadsheet referencedSheet;
 
         synchronized (this) {
-            referencedSheet = this.sheets.get(sheetId);
+            referencedSheet = this.storage.get(sheetId);
             if (referencedSheet == null) {
                 return Result.ok(null);
             }
 
             Set<String> shared = referencedSheet.getSharedWith();
             if (shared != null && shared.contains(userId)) {
-                System.out.println(Arrays.deepToString(this.getSheetRangeValues(referencedSheet, range)));
-                System.out.println(this.lastModified.get(sheetId));
-                return Result.ok(new RangeValues(this.getSheetRangeValues(referencedSheet, range), this.lastModified.get(sheetId)));
+                return Result.ok(new RangeValues(this.getSheetRangeValues(referencedSheet, range), this.storage.getLastModified(sheetId)));
             }
         }
+
         return Result.ok(null);
     }
 
@@ -205,7 +201,7 @@ public class SpreadsheetResource implements Spreadsheets {
         }
         Spreadsheet sheet;
         synchronized (this) {
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -273,7 +269,7 @@ public class SpreadsheetResource implements Spreadsheets {
                         CacheEntry entry = sheetCache.getEntry(cacheId);
 
                         if (entry == null) {
-                            Log.severe("Value was not cached.");
+                            Log.info("Value was not cached.");
                             RangeValues values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
                             if (values != null) {
                                 sheetCache.newEntry(cacheId, values.getLastModified(), System.nanoTime(), values.getValues());
@@ -283,11 +279,11 @@ public class SpreadsheetResource implements Spreadsheets {
                         }
 
                         if (System.nanoTime() - entry.getTC() < Cache.EXPIRE_TIME) {
-                            Log.severe("Returning from cache.");
+                            Log.info("Returning from cache.");
                             return entry.getValues();
                         }
 
-                        Log.severe("Cache outdated, getting from server.");
+                        Log.info("Cache outdated, getting from server.");
 
                         RangeValues values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
 
@@ -326,7 +322,7 @@ public class SpreadsheetResource implements Spreadsheets {
         if (userCode == 200) {
             Spreadsheet sheet;
             synchronized (this) {
-                sheet = this.sheets.get(sheetId);
+                sheet = this.storage.get(sheetId);
 
                 if (sheet == null) {
                     return Result.error(Result.ErrorCode.NOT_FOUND);
@@ -335,7 +331,8 @@ public class SpreadsheetResource implements Spreadsheets {
                 // If user is owner
                 if (sheet.getOwner().equals(userId)) {
                     sheet.setCellRawValue(cell, rawValue);
-                    this.lastModified.put(sheetId, System.nanoTime());
+//                    this.lastModified.put(sheetId, System.nanoTime());
+                    this.storage.put(sheet);
                     return Result.ok(null);
                 }
 
@@ -344,7 +341,8 @@ public class SpreadsheetResource implements Spreadsheets {
                 String sharedUser = userId + "@" + this.domain;
                 if (sharedWith != null && sharedWith.contains(sharedUser)) {
                     sheet.setCellRawValue(cell, rawValue);
-                    this.lastModified.put(sheetId, System.nanoTime());
+//                    this.lastModified.put(sheetId, System.nanoTime());
+                    this.storage.put(sheet);
                     return Result.ok(null);
                 }
             }
@@ -366,7 +364,7 @@ public class SpreadsheetResource implements Spreadsheets {
         Spreadsheet sheet;
         String owner;
         synchronized (this) {
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -394,7 +392,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
         synchronized (this) {
             // Check if sheet still exists after breaking synchronized block
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -409,7 +407,8 @@ public class SpreadsheetResource implements Spreadsheets {
 
             shared.add(userId);
             sheet.setSharedWith(shared);
-            this.lastModified.put(sheetId, System.nanoTime());
+//            this.lastModified.put(sheetId, System.nanoTime());
+            this.storage.put(sheet);
         }
         return Result.ok(null);
     }
@@ -425,7 +424,7 @@ public class SpreadsheetResource implements Spreadsheets {
         Spreadsheet sheet;
         String owner;
         synchronized (this) {
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
 
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
@@ -454,7 +453,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
         synchronized (this) {
             // Check if sheet still exists after breaking synchronized block
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
@@ -468,7 +467,8 @@ public class SpreadsheetResource implements Spreadsheets {
                 }
 
                 sheet.setSharedWith(shared);
-                this.lastModified.put(sheetId, System.nanoTime());
+//                this.lastModified.put(sheetId, System.nanoTime());
+                this.storage.put(sheet);
             }
 
         }
@@ -488,15 +488,7 @@ public class SpreadsheetResource implements Spreadsheets {
         int userStatusCode = this.getUser(userId, password, this.domain);
 
         if (userStatusCode == 404) {
-            synchronized (this) {
-                Set<String> usersSheets = this.sheetsByOwner.get(userId);
-
-                for (String sheetId : usersSheets) {
-                    this.sheets.remove(sheetId);
-                }
-
-                this.sheetsByOwner.remove(userId);
-            }
+            this.storage.deleteUserSheets(userId);
         } else {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
@@ -516,7 +508,7 @@ public class SpreadsheetResource implements Spreadsheets {
         Spreadsheet sheet;
         String owner;
         synchronized (this) {
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
 
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
@@ -529,15 +521,13 @@ public class SpreadsheetResource implements Spreadsheets {
 
         synchronized (this) {
             // Check if sheet still exists after breaking synchronized block
-            sheet = this.sheets.get(sheetId);
+            sheet = this.storage.get(sheetId);
             if (sheet == null) {
                 Log.info("Sheet doesn't exist.");
                 return Result.error(Result.ErrorCode.NOT_FOUND);
             }
             if (userStatusCode == 200) {
-                this.sheets.remove(sheetId);
-                this.sheetsByOwner.get(sheet.getOwner()).remove(sheetId);
-                this.lastModified.remove(sheetId);
+                this.storage.deleteSheet(sheetId, owner);
             } else if (userStatusCode == 403) {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             } else {

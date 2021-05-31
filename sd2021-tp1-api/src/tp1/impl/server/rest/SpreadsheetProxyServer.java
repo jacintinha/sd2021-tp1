@@ -2,23 +2,21 @@ package tp1.impl.server.rest;
 
 import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
-import tp1.impl.server.rest.resources.SpreadsheetProxy;
 import tp1.impl.server.rest.resources.SpreadsheetRest;
+import tp1.impl.storage.Storage;
 import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.dropbox.DropboxAPI;
-import tp1.impl.util.dropbox.arguments.PathV2Args;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.URI;
 
-import java.util.List;
 import java.util.logging.Logger;
 
-public class ProxyServer {
-    private static final Logger Log = Logger.getLogger(SpreadsheetProxy.class.getName());
+public class SpreadsheetProxyServer {
+    private static final Logger Log = Logger.getLogger(SpreadsheetRest.class.getName());
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -51,7 +49,7 @@ public class ProxyServer {
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetProxy(domain, serverURI, secret));
+            config.register(new SpreadsheetRest(domain, serverURI, Storage.EXTERNAL_STORAGE, secret));
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 
