@@ -5,48 +5,48 @@ import java.util.List;
 
 public class ListFolderReturn {
 
-	private String cursor;
-	private boolean has_more;
-	private List<FolderEntry> entries;
+    private String cursor;
+    private boolean has_more;
+    private List<FolderEntry> entries;
 
-	public static class FolderEntry extends HashMap<String, Object> {
-		private static final long serialVersionUID = 1L;
-		public FolderEntry() {}
+    public static class FolderEntry extends HashMap<String, Object> {
+        private static final long serialVersionUID = 1L;
 
-		@Override
-		public String toString() {
-			return super.get("name").toString();
-		}
-	}
+        public FolderEntry() {
+        }
 
-	public ListFolderReturn() {
-	}
+        @Override
+        public String toString() {
+            return super.get("name").toString();
+        }
+    }
 
-	public String getCursor() {
-		return cursor;
-	}
+    public ListFolderReturn() {
+    }
 
-	public void setCursor(String cursor) {
-		this.cursor = cursor;
-	}
+    public String getCursor() {
+        return cursor;
+    }
 
-	public boolean has_more() {
-		return has_more;
-	}
+    public void setCursor(String cursor) {
+        this.cursor = cursor;
+    }
 
-	public void setHas_more(boolean has_more) {
-		this.has_more = has_more;
-	}
+    public boolean has_more() {
+        return has_more;
+    }
 
-	public List<FolderEntry> getEntries() {
-		return entries;
-	}
+    public void setHas_more(boolean has_more) {
+        this.has_more = has_more;
+    }
 
-	public void setEntries(List<FolderEntry> entries) {
-		this.entries = entries;
-	}
+    public List<FolderEntry> getEntries() {
+        return entries;
+    }
 
-
+    public void setEntries(List<FolderEntry> entries) {
+        this.entries = entries;
+    }
 
 
 }

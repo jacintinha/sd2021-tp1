@@ -1,12 +1,4 @@
 package tp1.impl.util.dropbox;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.pac4j.scribe.builder.api.DropboxApi20;
 
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.model.OAuth2AccessToken;
@@ -15,12 +7,17 @@ import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import com.google.gson.Gson;
-
+import org.pac4j.scribe.builder.api.DropboxApi20;
 import tp1.api.Spreadsheet;
 import tp1.config.DropboxConfig;
 import tp1.impl.util.dropbox.arguments.*;
 import tp1.impl.util.dropbox.replies.ListFolderReturn;
 import tp1.impl.util.dropbox.replies.ListFolderReturn.FolderEntry;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public class DropboxAPI {
@@ -51,7 +48,7 @@ public class DropboxAPI {
         json = new Gson();
     }
 
-    public boolean createDirectory( String directoryName ) {
+    public boolean createDirectory(String directoryName) {
         OAuthRequest createFolder = new OAuthRequest(Verb.POST, CREATE_FOLDER_V2_URL);
         createFolder.addHeader("Content-Type", JSON_CONTENT_TYPE);
 
@@ -68,7 +65,7 @@ public class DropboxAPI {
             return false;
         }
         //TODO Codes (print message?)
-        if(r.getCode() == 200 || r.getCode() == 409) {
+        if (r.getCode() == 200 || r.getCode() == 409) {
             if (r.getCode() == 409) {
                 System.out.println("Folder already existed.");
             }
@@ -101,7 +98,7 @@ public class DropboxAPI {
             return false;
         }
         //TODO Codes (print message?)
-        if(r.getCode() == 200 || r.getCode() == 409) {
+        if (r.getCode() == 200 || r.getCode() == 409) {
             return true;
         } else {
             System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
@@ -131,7 +128,7 @@ public class DropboxAPI {
             return false;
         }
         //TODO Codes (print message?)
-        if(r.getCode() == 200) {
+        if (r.getCode() == 200) {
             return true;
         } else {
             System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
@@ -164,7 +161,7 @@ public class DropboxAPI {
         }
 
         //TODO Codes (print message?)
-        if(r.getCode() == 200 || r.getCode() == 409) {
+        if (r.getCode() == 200 || r.getCode() == 409) {
             return true;
         } else {
             System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
@@ -196,10 +193,9 @@ public class DropboxAPI {
 
         if (r.getCode() == 429) {
             System.out.println("429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429");
-            System.exit(69);
         }
 
-        if(r.getCode() == 200) {
+        if (r.getCode() == 200) {
             try {
                 return this.json.fromJson(r.getBody(), Spreadsheet.class);
             } catch (IOException e) {
@@ -230,10 +226,10 @@ public class DropboxAPI {
         Response r = null;
 
         try {
-            while(true) {
+            while (true) {
                 r = service.execute(listDirectory);
 
-                if(r.getCode() != 200) {
+                if (r.getCode() != 200) {
                     System.err.println("Failed to list directory. Status " + r.getCode() + ": " + r.getMessage());
                     System.err.println(r.getBody());
                     return null;
@@ -241,11 +237,11 @@ public class DropboxAPI {
 
                 ListFolderReturn reply = json.fromJson(r.getBody(), ListFolderReturn.class);
 
-                for(FolderEntry e: reply.getEntries()) {
+                for (FolderEntry e : reply.getEntries()) {
                     directoryContents.add(new PathV2Args("/" + rootDirectory + e.toString()));
                 }
 
-                if(reply.has_more()) {
+                if (reply.has_more()) {
                     //There are more elements to read, prepare a new request (now a continuation)
                     listDirectory = new OAuthRequest(Verb.POST, LIST_FOLDER_CONTINUE_URL);
                     listDirectory.addHeader("Content-Type", JSON_CONTENT_TYPE);

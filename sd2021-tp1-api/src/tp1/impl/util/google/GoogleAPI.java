@@ -19,11 +19,11 @@ public class GoogleAPI {
 
     public static final String GET_RANGE = "https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s";
 
-    public GoogleAPI () {
+    public GoogleAPI() {
     }
 
     public String[][] getSpreadsheetRange(String sheetId, String range) {
-        String url =  String.format(GET_RANGE, sheetId, range);
+        String url = String.format(GET_RANGE, sheetId, range);
 
         ClientConfig config = new ClientConfig();
         // how much time until we timeout when opening the TCP connection to the server
@@ -36,7 +36,7 @@ public class GoogleAPI {
         WebTarget target = client.target(url);
 
         int retries = 0;
-        while( retries < MAX_RETRIES ) {
+        while (retries < MAX_RETRIES) {
             try {
                 Response r = target.queryParam("key", GoogleSheetsConfig.API_KEY).request().accept(MediaType.APPLICATION_JSON).get();
                 GoogleResult list = r.readEntity(GoogleResult.class);

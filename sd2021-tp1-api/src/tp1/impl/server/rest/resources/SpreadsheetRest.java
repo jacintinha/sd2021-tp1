@@ -1,16 +1,13 @@
 package tp1.impl.server.rest.resources;
 
-import jakarta.jws.WebService;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
-import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.util.RangeValues;
 
-@WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
 public class SpreadsheetRest implements RestSpreadsheets {
 
     private SpreadsheetResource resource;

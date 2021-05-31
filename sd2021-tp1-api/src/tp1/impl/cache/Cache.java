@@ -1,10 +1,5 @@
 package tp1.impl.cache;
 
-import tp1.impl.server.rest.SpreadsheetServer;
-import tp1.impl.util.Mediator;
-import tp1.impl.util.discovery.Discovery;
-
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +25,7 @@ public class Cache {
         CacheEntry entry = this.cache.get(cacheId);
         // TODO null
 
-        if (twServer > entry.getTwClient())         {
+        if (twServer > entry.getTwClient()) {
             entry.setValues(values);
             entry.setTwClient(twServer);
         }

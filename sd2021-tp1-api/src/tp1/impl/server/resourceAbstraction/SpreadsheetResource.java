@@ -20,7 +20,9 @@ import tp1.impl.util.google.GoogleAPI;
 import tp1.util.CellRange;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @Singleton
@@ -537,7 +539,7 @@ public class SpreadsheetResource implements Spreadsheets {
         return Result.ok(null);
     }
 
-    private boolean isValidated(String secret){
+    private boolean isValidated(String secret) {
         return this.secret.equals(secret);
     }
 }

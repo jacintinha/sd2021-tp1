@@ -46,7 +46,7 @@ public class ExternalStorage implements Storage {
 
     @Override
     public void deleteSheet(String sheetId, String owner) {
-    this.dropbox.delete(this.PATH + sheetId);
+        this.dropbox.delete(this.PATH + sheetId);
 
         this.dropbox.delete(this.PATH + owner + "/" + sheetId);
 

@@ -20,11 +20,9 @@ import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.soap.SoapUsers;
 import tp1.api.service.soap.UsersException;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 
 public class Mediator {
 

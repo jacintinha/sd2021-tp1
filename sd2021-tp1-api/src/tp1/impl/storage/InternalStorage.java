@@ -2,9 +2,9 @@ package tp1.impl.storage;
 
 import tp1.api.Spreadsheet;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
 
 public class InternalStorage implements Storage {

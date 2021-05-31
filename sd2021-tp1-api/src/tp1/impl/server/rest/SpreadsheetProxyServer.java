@@ -12,7 +12,6 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.URI;
-
 import java.util.logging.Logger;
 
 public class SpreadsheetProxyServer {
