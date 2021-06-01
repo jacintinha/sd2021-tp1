@@ -6,6 +6,8 @@ import jakarta.ws.rs.core.UriBuilder;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
+import tp1.impl.serialization.CreateSpreadsheetOperation;
+import tp1.impl.serialization.OperationQueue;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.storage.Storage;
 import tp1.impl.util.RangeValues;
@@ -18,6 +20,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     private SpreadsheetResource resource;
     private ZookeeperProcessor zk;
     private String serverURI;
+    private final OperationQueue operationQueue = new OperationQueue();
 
     public SpreadsheetRep() {
     }

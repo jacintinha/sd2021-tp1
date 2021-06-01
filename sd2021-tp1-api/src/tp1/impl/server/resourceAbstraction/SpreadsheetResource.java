@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 @Singleton
 public class SpreadsheetResource implements Spreadsheets {
 
-
     private static final Logger Log = Logger.getLogger(SpreadsheetResource.class.getName());
     private String domain;
     private String serverURI;
@@ -36,7 +35,6 @@ public class SpreadsheetResource implements Spreadsheets {
     private GoogleAPI googleAPI;
     private Storage storage;
     private final Cache sheetCache = new Cache();
-
 
     public SpreadsheetResource() {
     }
