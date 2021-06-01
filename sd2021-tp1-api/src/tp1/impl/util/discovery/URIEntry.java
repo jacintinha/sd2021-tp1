@@ -2,6 +2,7 @@ package tp1.impl.util.discovery;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 public class URIEntry {
 
@@ -28,7 +29,11 @@ public class URIEntry {
 
     @Override
     public boolean equals(Object obj) {
-        return this.uri.equals(((URIEntry) obj).getURI());
+        return this.uri.toString().equals(((URIEntry) obj).getURI().toString());
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(uri.toString());
+    }
 }
