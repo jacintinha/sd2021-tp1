@@ -112,6 +112,7 @@ public interface Spreadsheets {
      */
     Result<String[][]> getSpreadsheetValues(String sheetId, String userId, String password);
 
+
     /**
      * Deletes all user's spreadsheets.
      *
@@ -120,6 +121,5 @@ public interface Spreadsheets {
      * 400, otherwise.
      */
     Result<Void> deleteUserSpreadsheets(String userId, String secret);
-
 
 }

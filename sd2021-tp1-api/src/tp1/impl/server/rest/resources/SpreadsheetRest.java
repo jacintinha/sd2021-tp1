@@ -5,6 +5,8 @@ import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
+import tp1.impl.serialization.CreateSpreadsheetOperation;
+import tp1.impl.serialization.Operation;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.util.RangeValues;
 
@@ -66,6 +68,11 @@ public class SpreadsheetRest implements RestSpreadsheets {
     @Override
     public void deleteUserSpreadsheets(String userId, String secret) throws WebApplicationException {
         this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
+    }
+
+    // TODO
+    @Override
+    public void sendOperation(CreateSpreadsheetOperation operation, String secret) {
     }
 
     @Override

@@ -6,14 +6,24 @@ import jakarta.ws.rs.core.UriBuilder;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
+import tp1.impl.serialization.CreateSpreadsheetOperation;
+import tp1.impl.serialization.Operation;
 import tp1.impl.serialization.OperationQueue;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
+import tp1.impl.server.rest.SpreadsheetServer;
+import tp1.impl.server.rest.UsersServer;
 import tp1.impl.storage.Storage;
+import tp1.impl.util.Mediator;
 import tp1.impl.util.RangeValues;
+import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.impl.versioning.ReplicationManager;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SpreadsheetRep implements RestSpreadsheets {
 
@@ -22,12 +32,15 @@ public class SpreadsheetRep implements RestSpreadsheets {
     private String serverURI;
     private ReplicationManager replicationManager;
     private final OperationQueue operationQueue = new OperationQueue();
+    private String domain;
+    private String secret;
 
     public SpreadsheetRep() {
     }
 
     public SpreadsheetRep(String domain, String serverURI, String secret, ReplicationManager repManager) throws Exception {
         this.zk = new ZookeeperProcessor("kafka:2181", domain, serverURI);;
+        this.domain = domain;
         this.serverURI = serverURI;
         this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
     }
@@ -65,7 +78,65 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath("")).queryParam("password", password).build(sheet);
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        return this.parseResult(this.resource.createSpreadsheet(sheet, password));
+        synchronized (this) {
+            String result = this.parseResult(this.resource.createSpreadsheet(sheet, password));
+            System.out.println("Created@Primary");
+            CreateSpreadsheetOperation operation = new CreateSpreadsheetOperation(sheet, password);
+            sendToReplicas(operation); // blocking until you receive one ACK
+            System.out.println("SentToReplicas@Primary");
+            this.operationQueue.addToHistory(operation);
+//            System.exit(123456769);
+            return result;
+        }
+    }
+
+    private void sendToReplicas(CreateSpreadsheetOperation operation) {
+        String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
+
+        URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
+
+        System.out.println(Arrays.toString(knownURIs));
+
+        ExecutorService executor = Executors.newFixedThreadPool(knownURIs.length);
+
+        AtomicBoolean acked = new AtomicBoolean();
+
+        for (URI uri : knownURIs) {
+            if (uri.toString().equals(this.serverURI)) continue;
+            Runnable worker = new SendOperationWorker(uri.toString(), operation, this.secret, acked);
+            executor.execute(worker);
+        }
+        executor.shutdown();
+
+        // As soon as we receive one ACK we can proceed
+        while (!acked.get() && !executor.isTerminated());
+    }
+
+    public static class SendOperationWorker implements Runnable {
+
+        private final String serverURI;
+        private final CreateSpreadsheetOperation operation;
+        private final String secret;
+        private final AtomicBoolean acked;
+
+        SendOperationWorker(String serverURI, CreateSpreadsheetOperation operation, String secret, AtomicBoolean acked) {
+            this.serverURI = serverURI;
+            this.operation = operation;
+            this.secret = secret;
+            this.acked = acked;
+        }
+
+        @Override
+        public void run() {
+            // TODO
+            int res = Mediator.sendOperation(this.serverURI, this.operation, this.secret);
+            if (res == 204) {
+                System.out.println("Setting ACKED to true @ Thread");
+                this.acked.set(true);
+            } else {
+                System.out.println("FUCK");
+            }
+        }
     }
 
     @Override
@@ -131,6 +202,12 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
+    }
+
+    @Override
+    public void sendOperation(CreateSpreadsheetOperation operation, String secret) {
+        System.out.println("I'm " + this.serverURI);
+        System.out.println("They want me to do: " + (operation instanceof CreateSpreadsheetOperation));
     }
 
     @Override

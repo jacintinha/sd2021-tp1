@@ -14,8 +14,8 @@ public class OperationQueue {
         this.queue = new LinkedList<>();
     }
 
-    public void addOperation(Operation operation) {
-        this.queue.add(operation);
+    public synchronized void addToHistory(Operation operation) {
+        this.history.add(operation);
     }
 
     public Operation execute() {
