@@ -253,12 +253,9 @@ public class Mediator {
         while (retries < 100) {
 
             try {
-                spreadsheets.deleteUserSpreadsheets(userId, password, secret);
+                spreadsheets.deleteUserSpreadsheets(userId, secret);
                 System.out.println("Deleting " + userId + "'s spreadsheets.");
                 return 200;
-            } catch (SheetsException e) {
-                System.out.println("Could not delete spreadsheets: " + e.getMessage());
-                return Response.Status.valueOf(e.getMessage()).getStatusCode();
             } catch (WebServiceException wse) {
                 System.out.println("Communication error.");
                 wse.printStackTrace();

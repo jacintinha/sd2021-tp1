@@ -153,16 +153,15 @@ public interface RestSpreadsheets {
                             @QueryParam("password") String password);
 
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
-     * @param secret   - the secret to access/execute the function.
+     * @param userId - the user whose sheets will be deleted.
+     * @param secret - the secret to access/execute the function.
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
     @DELETE
     @Path("/delete/{userId}")
-    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("password") String password, @QueryParam("secret") String secret);
+    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("secret") String secret);
 
 }

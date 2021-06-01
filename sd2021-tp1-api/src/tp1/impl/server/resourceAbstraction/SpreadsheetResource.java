@@ -478,8 +478,8 @@ public class SpreadsheetResource implements Spreadsheets {
     }
 
     @Override
-    public Result<Void> deleteUserSpreadsheets(String userId, String password, String secret) {
-        Log.info("deleteUserSpreadsheets : user = " + userId + "; pwd = " + password);
+    public Result<Void> deleteUserSpreadsheets(String userId, String secret) {
+        Log.info("deleteUserSpreadsheets : user = " + userId);
 
         // Check if data is valid, if not return HTTP CONFLICT (400)
         if (!isValidated(secret) || userId == null) {
@@ -487,13 +487,8 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.error(Result.ErrorCode.BAD_REQUEST);
         }
 
-        int userStatusCode = this.getUser(userId, password, this.domain);
+        this.storage.deleteUserSheets(userId);
 
-        if (userStatusCode == 404) {
-            this.storage.deleteUserSheets(userId);
-        } else {
-            return Result.error(Result.ErrorCode.BAD_REQUEST);
-        }
         return Result.ok(null);
     }
 

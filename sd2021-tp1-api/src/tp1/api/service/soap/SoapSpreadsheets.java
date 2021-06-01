@@ -110,14 +110,12 @@ public interface SoapSpreadsheets {
     String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws SheetsException;
 
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
-     * @param secret   - the secret needed for this function to execute.
-     * @throws SheetsException otherwise
+     * @param userId - the user whose sheets will be deleted.
+     * @param secret - the secret needed for this function to execute.
      */
     @WebMethod
-    void deleteUserSpreadsheets(String userId, String password, String secret) throws SheetsException;
+    void deleteUserSpreadsheets(String userId, String secret);
 
 }

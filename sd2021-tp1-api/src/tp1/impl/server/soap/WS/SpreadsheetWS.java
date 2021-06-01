@@ -64,8 +64,11 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password, String secret) throws SheetsException {
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password, secret));
+    public void deleteUserSpreadsheets(String userId, String secret) {
+        try {
+            this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
+        } catch (SheetsException ignored) {
+        }
     }
 
     @Override

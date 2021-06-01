@@ -113,14 +113,13 @@ public interface Spreadsheets {
     Result<String[][]> getSpreadsheetValues(String sheetId, String userId, String password);
 
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
+     * @param userId - the user whose sheets will be deleted.
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
-    Result<Void> deleteUserSpreadsheets(String userId, String password, String secret);
+    Result<Void> deleteUserSpreadsheets(String userId, String secret);
 
 
 }

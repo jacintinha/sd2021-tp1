@@ -83,7 +83,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/values")).queryParam("userId", userId).queryParam("password", password).build();
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/values")).queryParam("userId", userId).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         return this.parseResult(this.resource.getSpreadsheetValues(sheetId, userId, password));
@@ -94,7 +94,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/"+cell)).queryParam("userId", userId).queryParam("password", password).build(rawValue);
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/" + cell)).queryParam("userId", userId).queryParam("password", password).build(rawValue);
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
@@ -104,7 +104,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public void shareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/share/"+userId)).queryParam("password", password).build();
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
@@ -114,19 +114,19 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/share/"+userId)).queryParam("password", password).build();
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password, String secret) throws WebApplicationException {
+    public void deleteUserSpreadsheets(String userId, String secret) throws WebApplicationException {
         if (!checkPrimary()) {
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath("delete/"+userId)).queryParam("password", password).queryParam("secret", secret).build();
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath("delete/" + userId)).queryParam("secret", secret).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password, secret));
+        this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
     }
 
     @Override
