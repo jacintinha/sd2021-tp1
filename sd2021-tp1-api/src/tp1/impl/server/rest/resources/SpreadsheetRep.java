@@ -35,16 +35,30 @@ public class SpreadsheetRep implements RestSpreadsheets {
         throw new WebApplicationException(Response.Status.valueOf(result.error().name()));
     }
 
+    /**
+     * Checks if this server's URI is the primary's URI
+     *
+     * @return true if so, false otherwise
+     */
     private boolean checkPrimary() {
-        return zk.getPrimary().equals(this.serverURI);
+        return this.zk.getPrimary().equals(this.serverURI);
+    }
+
+    /**
+     * Returns the main path for redirections plus given extra
+     *
+     * @param extra - extra path to add. Can be empty
+     * @return String - path for redirections
+     */
+    private String getPrimaryPath(String extra) {
+        return this.zk.getPrimary() + RestSpreadsheets.PATH + "/" + extra;
     }
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.zk.getPrimary()).queryParam("password", password).build(sheet);
-            System.err.println("GRIGORII " + uri.toString());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath("")).queryParam("password", password).build(sheet);
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         return this.parseResult(this.resource.createSpreadsheet(sheet, password));
@@ -54,14 +68,11 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            URI uri = UriBuilder.fromPath(this.zk.getPrimary()).path(sheetId).queryParam("userId", userId).queryParam("password", password).build();
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
-        } else {
-            System.out.println("I was called");
         }
         return this.parseResult(this.resource.getSpreadsheet(sheetId, userId, password));
     }
-
 
     @Override
     public RangeValues importValues(String sheetId, String userId, String range, String secret) throws WebApplicationException {
@@ -72,16 +83,19 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            throw new WebApplicationException(Response.temporaryRedirect(URI.create(zk.getPrimary())).build());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/values")).queryParam("userId", userId).queryParam("password", password).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         return this.parseResult(this.resource.getSpreadsheetValues(sheetId, userId, password));
     }
 
+    @Override
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
             throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            throw new WebApplicationException(Response.temporaryRedirect(URI.create(zk.getPrimary())).build());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/"+cell)).queryParam("userId", userId).queryParam("password", password).build(rawValue);
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
     }
@@ -90,7 +104,8 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public void shareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            throw new WebApplicationException(Response.temporaryRedirect(URI.create(zk.getPrimary())).build());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/share/"+userId)).queryParam("password", password).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
     }
@@ -99,13 +114,18 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            throw new WebApplicationException(Response.temporaryRedirect(URI.create(zk.getPrimary())).build());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId+"/share/"+userId)).queryParam("password", password).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
     }
 
     @Override
     public void deleteUserSpreadsheets(String userId, String password, String secret) throws WebApplicationException {
+        if (!checkPrimary()) {
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath("delete/"+userId)).queryParam("password", password).queryParam("secret", secret).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
+        }
         this.parseResult(this.resource.deleteUserSpreadsheets(userId, password, secret));
     }
 
@@ -113,7 +133,8 @@ public class SpreadsheetRep implements RestSpreadsheets {
     public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
         if (!checkPrimary()) {
             // Redirect
-            throw new WebApplicationException(Response.temporaryRedirect(URI.create(zk.getPrimary())).build());
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("password", password).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.deleteSpreadsheet(sheetId, password));
     }

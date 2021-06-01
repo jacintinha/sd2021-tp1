@@ -50,6 +50,7 @@ public class ZookeeperProcessor implements Watcher {
                     List<String> lst = getChildren(path, this);
                     // Quicksort is fast, specially for small collections
                     Collections.sort(lst);
+                    // TODO check even getPath
                     String primaryURI = new String(zk.getData(path + "/" + lst.get(0), false, null));
                     System.out.println("Primary is now: " + primaryURI);
                     setPrimary(primaryURI);
