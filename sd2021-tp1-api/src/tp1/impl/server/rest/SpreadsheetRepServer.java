@@ -7,6 +7,8 @@ import tp1.impl.server.rest.resources.SpreadsheetRep;
 import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
+import tp1.impl.versioning.ReplicationManager;
+import tp1.impl.versioning.VersionFilter;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -33,13 +35,13 @@ public class SpreadsheetRepServer {
             String domain = args[0];
             String serverURI = String.format("https://%s:%s/rest", ip, PORT);
 
-            ZookeeperProcessor zk = new ZookeeperProcessor("kafka:2181", domain, serverURI);
-
             // This allows client code executed by this server to ignore hostname verification
             HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
 
+            ReplicationManager repManager = new ReplicationManager();
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetRep(domain, serverURI, args[1], zk));
+            config.register(new SpreadsheetRep(domain, serverURI, args[1], repManager));
+            config.register(new VersionFilter(repManager));
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 

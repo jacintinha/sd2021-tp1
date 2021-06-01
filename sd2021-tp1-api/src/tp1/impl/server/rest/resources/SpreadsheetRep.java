@@ -6,12 +6,12 @@ import jakarta.ws.rs.core.UriBuilder;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
-import tp1.impl.serialization.CreateSpreadsheetOperation;
 import tp1.impl.serialization.OperationQueue;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.storage.Storage;
 import tp1.impl.util.RangeValues;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
+import tp1.impl.versioning.ReplicationManager;
 
 import java.net.URI;
 
@@ -20,13 +20,14 @@ public class SpreadsheetRep implements RestSpreadsheets {
     private SpreadsheetResource resource;
     private ZookeeperProcessor zk;
     private String serverURI;
+    private ReplicationManager replicationManager;
     private final OperationQueue operationQueue = new OperationQueue();
 
     public SpreadsheetRep() {
     }
 
-    public SpreadsheetRep(String domain, String serverURI, String secret, ZookeeperProcessor zk) {
-        this.zk = zk;
+    public SpreadsheetRep(String domain, String serverURI, String secret, ReplicationManager repManager) throws Exception {
+        this.zk = new ZookeeperProcessor("kafka:2181", domain, serverURI);;
         this.serverURI = serverURI;
         this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
     }
