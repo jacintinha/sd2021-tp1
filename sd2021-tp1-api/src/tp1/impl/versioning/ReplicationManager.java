@@ -24,7 +24,7 @@ public class ReplicationManager {
         json = new Gson();
     }
 
-    public void increment() {
+    public void incrementVersion() {
         this.version.incrementAndGet();
     }
 

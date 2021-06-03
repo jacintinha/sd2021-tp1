@@ -18,6 +18,10 @@ public class OperationQueue {
         this.history.add(operation);
     }
 
+    public synchronized void addToQueue(Operation operation) {
+        this.queue.add(operation);
+    }
+    
     public Operation execute() {
         Operation operation = this.queue.remove();
         this.history.add(operation);

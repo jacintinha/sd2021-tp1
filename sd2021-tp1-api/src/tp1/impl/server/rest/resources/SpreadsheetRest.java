@@ -28,39 +28,40 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public String createSpreadsheet(Spreadsheet sheet, String password) throws WebApplicationException {
+    public String createSpreadsheet(Spreadsheet sheet, String password,    Long version) throws WebApplicationException {
         return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 
 
     @Override
-    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
+    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password,  Long version) throws WebApplicationException {
         return this.parseResult(this.resource.getSpreadsheet(sheetId, userId, password));
     }
 
 
     @Override
-    public RangeValues importValues(String sheetId, String userId, String range, String secret) throws WebApplicationException {
+    public RangeValues importValues(String sheetId, String userId, String range, String secret,    Long version) throws WebApplicationException {
         return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
     }
 
     @Override
-    public String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws WebApplicationException {
+    public String[][] getSpreadsheetValues(String sheetId, String userId, String password, Long version) throws WebApplicationException {
         return this.parseResult(this.resource.getSpreadsheetValues(sheetId, userId, password));
     }
 
-    public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
+    @Override
+    public void updateCell(String sheetId, String cell, String rawValue, String userId, String password, Long version)
             throws WebApplicationException {
         this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
     }
 
     @Override
-    public void shareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
+    public void shareSpreadsheet(String sheetId, String userId, String password,   Long version) throws WebApplicationException {
         this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
-    public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
+    public void unshareSpreadsheet(String sheetId, String userId, String password, Long version) throws WebApplicationException {
         this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
     }
 
@@ -75,7 +76,7 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
+    public void deleteSpreadsheet(String sheetId, String password, Long version) throws WebApplicationException {
         this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
     }
 }
