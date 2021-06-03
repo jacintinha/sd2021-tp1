@@ -3,7 +3,6 @@ package tp1.api.service.rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
-import tp1.impl.serialization.CreateSpreadsheetOperation;
 import tp1.impl.serialization.Operation;
 import tp1.impl.util.RangeValues;
 
@@ -169,6 +168,6 @@ public interface RestSpreadsheets {
     @POST
     @Path("/operation")
     @Consumes(MediaType.APPLICATION_JSON)
-    void sendOperation(CreateSpreadsheetOperation operation, @QueryParam("secret") String secret);
+    void replicateOperation(String operation, @QueryParam("type") Operation.OPERATIONTYPE type, @QueryParam("secret") String secret);
 
 }

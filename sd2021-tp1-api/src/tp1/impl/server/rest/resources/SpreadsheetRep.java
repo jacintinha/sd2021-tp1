@@ -1,29 +1,20 @@
 package tp1.impl.server.rest.resources;
 
+import com.google.gson.Gson;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
-import tp1.impl.serialization.CreateSpreadsheetOperation;
-import tp1.impl.serialization.Operation;
-import tp1.impl.serialization.OperationQueue;
+import tp1.impl.serialization.*;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
-import tp1.impl.server.rest.SpreadsheetServer;
-import tp1.impl.server.rest.UsersServer;
 import tp1.impl.storage.Storage;
-import tp1.impl.util.Mediator;
 import tp1.impl.util.RangeValues;
-import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.impl.versioning.ReplicationManager;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SpreadsheetRep implements RestSpreadsheets {
 
@@ -33,15 +24,18 @@ public class SpreadsheetRep implements RestSpreadsheets {
     private ReplicationManager replicationManager;
     private final OperationQueue operationQueue = new OperationQueue();
     private String domain;
+    private static Gson json;
     private String secret;
 
     public SpreadsheetRep() {
     }
 
     public SpreadsheetRep(String domain, String serverURI, String secret, ReplicationManager repManager) throws Exception {
-        this.zk = new ZookeeperProcessor("kafka:2181", domain, serverURI);;
+        this.zk = new ZookeeperProcessor("kafka:2181", domain, serverURI);
         this.domain = domain;
+        json = new Gson();
         this.serverURI = serverURI;
+        this.secret = secret;
         this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
     }
 
@@ -79,69 +73,23 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         synchronized (this) {
-            String result = this.parseResult(this.resource.createSpreadsheet(sheet, password));
-            System.out.println("Created@Primary");
-            CreateSpreadsheetOperation operation = new CreateSpreadsheetOperation(sheet, password);
-            sendToReplicas(operation); // blocking until you receive one ACK
-            System.out.println("SentToReplicas@Primary");
-            this.operationQueue.addToHistory(operation);
-//            System.exit(123456769);
+            String result = this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
+            CreateSpreadsheetOperation operation = new CreateSpreadsheetOperation(sheet);
+            replicate(operation, Operation.OPERATIONTYPE.CREATE);
             return result;
         }
     }
 
-    private void sendToReplicas(CreateSpreadsheetOperation operation) {
-        String serviceName = this.domain + ":" + SpreadsheetServer.SERVICE;
-
-        URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
-
-        System.out.println(Arrays.toString(knownURIs));
-
-        ExecutorService executor = Executors.newFixedThreadPool(knownURIs.length);
-
-        AtomicBoolean acked = new AtomicBoolean();
-
-        for (URI uri : knownURIs) {
-            if (uri.toString().equals(this.serverURI)) continue;
-            Runnable worker = new SendOperationWorker(uri.toString(), operation, this.secret, acked);
-            executor.execute(worker);
-        }
-        executor.shutdown();
-
-        // As soon as we receive one ACK we can proceed
-        while (!acked.get() && !executor.isTerminated());
+    private void replicate(Operation operation, Operation.OPERATIONTYPE type) {
+        // blocking until you receive one ACK
+        replicationManager.sendToReplicas(operation, type, this.domain, this.serverURI, this.secret);
+        this.operationQueue.addToHistory(operation);
     }
 
-    public static class SendOperationWorker implements Runnable {
-
-        private final String serverURI;
-        private final CreateSpreadsheetOperation operation;
-        private final String secret;
-        private final AtomicBoolean acked;
-
-        SendOperationWorker(String serverURI, CreateSpreadsheetOperation operation, String secret, AtomicBoolean acked) {
-            this.serverURI = serverURI;
-            this.operation = operation;
-            this.secret = secret;
-            this.acked = acked;
-        }
-
-        @Override
-        public void run() {
-            // TODO
-            int res = Mediator.sendOperation(this.serverURI, this.operation, this.secret);
-            if (res == 204) {
-                System.out.println("Setting ACKED to true @ Thread");
-                this.acked.set(true);
-            } else {
-                System.out.println("FUCK");
-            }
-        }
-    }
 
     @Override
     public Spreadsheet getSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
-        if (!checkPrimary()) {
+        if (false) {//TODO !checkPrimary()) {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
@@ -172,7 +120,10 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/" + cell)).queryParam("userId", userId).queryParam("password", password).build(rawValue);
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
+
+        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
+        UpdateCellSpreadsheetOperation operation = new UpdateCellSpreadsheetOperation(sheetId, cell, rawValue);
+        replicate(operation, Operation.OPERATIONTYPE.UPDATECELL);
     }
 
     @Override
@@ -182,7 +133,9 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
+        ShareSpreadsheetOperation operation = new ShareSpreadsheetOperation(sheetId, userId);
+        replicate(operation, Operation.OPERATIONTYPE.SHARE);
     }
 
     @Override
@@ -192,7 +145,21 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
+        ShareSpreadsheetOperation operation = new ShareSpreadsheetOperation(sheetId, userId);
+        replicate(operation, Operation.OPERATIONTYPE.UNSHARE);
+    }
+
+    @Override
+    public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
+        if (!checkPrimary()) {
+            // Redirect
+            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("password", password).build();
+            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
+        }
+        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
+        DeleteSpreadsheetOperation operation = new DeleteSpreadsheetOperation(sheetId);
+        replicate(operation, Operation.OPERATIONTYPE.DELETE);
     }
 
     @Override
@@ -205,18 +172,31 @@ public class SpreadsheetRep implements RestSpreadsheets {
     }
 
     @Override
-    public void sendOperation(CreateSpreadsheetOperation operation, String secret) {
-        System.out.println("I'm " + this.serverURI);
-        System.out.println("They want me to do: " + (operation instanceof CreateSpreadsheetOperation));
-    }
-
-    @Override
-    public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
-        if (!checkPrimary()) {
-            // Redirect
-            URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("password", password).build();
-            throw new WebApplicationException(Response.temporaryRedirect(uri).build());
+    public void replicateOperation(String operation, Operation.OPERATIONTYPE type, String secret) {
+        switch (type) {
+            case CREATE:
+                CreateSpreadsheetOperation create = json.fromJson(operation, CreateSpreadsheetOperation.class);
+                this.resource.createSpreadsheet(create.getSheet(), null, secret);
+                break;
+            case UPDATECELL:
+                UpdateCellSpreadsheetOperation update = json.fromJson(operation, UpdateCellSpreadsheetOperation.class);
+                this.resource.updateCell(update.getSheetId(), update.getCell(), update.getRawValue(), null, null, secret);
+                break;
+            case DELETE:
+                DeleteSpreadsheetOperation delete = json.fromJson(operation, DeleteSpreadsheetOperation.class);
+                this.resource.deleteSpreadsheet(delete.getSheetId(), null, secret);
+                break;
+            case SHARE:
+                ShareSpreadsheetOperation share = json.fromJson(operation, ShareSpreadsheetOperation.class);
+                this.resource.shareSpreadsheet(share.getSheetId(), share.getUserId(), null, secret);
+                break;
+            case UNSHARE:
+                ShareSpreadsheetOperation unshare = json.fromJson(operation, ShareSpreadsheetOperation.class);
+                this.resource.unshareSpreadsheet(unshare.getSheetId(), unshare.getUserId(), null, secret);
+                break;
+            default:
+                break;
         }
-        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password));
+
     }
 }

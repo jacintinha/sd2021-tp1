@@ -30,7 +30,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) throws SheetsException {
-        return this.parseResult(this.resource.createSpreadsheet(sheet, password));
+        return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 
     @Override
@@ -50,17 +50,17 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
             throws SheetsException {
-        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
+        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
     }
 
     @Override
     public void shareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
@@ -73,6 +73,6 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     @Override
     public void deleteSpreadsheet(String sheetId, String password) throws SheetsException {
-        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password));
+        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
     }
 }

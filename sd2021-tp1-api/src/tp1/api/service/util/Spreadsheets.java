@@ -11,10 +11,11 @@ public interface Spreadsheets {
      *
      * @param sheet    - the spreadsheet to be created.
      * @param password - the password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 200 the sheetId;
      * 400 otherwise.
      */
-    Result<String> createSpreadsheet(Spreadsheet sheet, String password);
+    Result<String> createSpreadsheet(Spreadsheet sheet, String password, String secret);
 
 
     /**
@@ -22,12 +23,13 @@ public interface Spreadsheets {
      *
      * @param sheetId  - the sheet to be deleted.
      * @param password - the password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204 if the sheet was successful.
      * 404 if no sheet exists with the given sheetId.
      * 403 if the password is incorrect.
      * 400 otherwise.
      */
-    Result<Void> deleteSpreadsheet(String sheetId, String password);
+    Result<Void> deleteSpreadsheet(String sheetId, String password, String secret);
 
     /**
      * Retrieve a spreadsheet.
@@ -60,13 +62,14 @@ public interface Spreadsheets {
      * @param sheetId  - the sheet being shared.
      * @param userId   - the user that is being added to the list of shares.
      * @param password - The password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, in case of success.
      * 404, if either the spreadsheet or user do not exist
      * 409, if the sheet is already shared with the user
      * 403 if the password is incorrect.
      * 400, otherwise
      */
-    Result<Void> shareSpreadsheet(String sheetId, String userId, String password);
+    Result<Void> shareSpreadsheet(String sheetId, String userId, String password, String secret);
 
 
     /**
@@ -75,12 +78,13 @@ public interface Spreadsheets {
      * @param sheetId  - the sheet being shared.
      * @param userId   - the user that is being removed from the list of shares.
      * @param password - The password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, in case of success.
      * 404, if the spreadsheet, the user or the share do not exist
      * 403 if the password is incorrect.
      * 400, otherwise
      */
-    Result<Void> unshareSpreadsheet(String sheetId, String userId, String password);
+    Result<Void> unshareSpreadsheet(String sheetId, String userId, String password, String secret);
 
 
     /**
@@ -91,12 +95,13 @@ public interface Spreadsheets {
      * @param cell     - the cell being updated
      * @param rawValue - the new raw value of the cell
      * @param password - the password of the owner of the spreadsheet
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, if the operation was successful
      * 404, if no spreadsheet exists with the given sheetid
      * 403, if the password is incorrect.
      * 400 otherwise
      **/
-    Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password);
+    Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password, String secret);
 
 
     /**

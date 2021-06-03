@@ -6,7 +6,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import tp1.impl.server.rest.resources.SpreadsheetRep;
 import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
-import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.impl.versioning.ReplicationManager;
 import tp1.impl.versioning.VersionFilter;
 

@@ -192,9 +192,10 @@ public class DropboxAPI {
         //TODO Codes
 
         if (r.getCode() == 429) {
-            System.out.println("429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429429");
+            int a = Integer.parseInt(r.getHeader("Retry-After"));
+            System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
+            //Thread.sleep(a);
         }
-
         if (r.getCode() == 200) {
             try {
                 return this.json.fromJson(r.getBody(), Spreadsheet.class);

@@ -5,7 +5,6 @@ import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
-import tp1.impl.serialization.CreateSpreadsheetOperation;
 import tp1.impl.serialization.Operation;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.util.RangeValues;
@@ -30,7 +29,7 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) throws WebApplicationException {
-        return this.parseResult(this.resource.createSpreadsheet(sheet, password));
+        return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 
 
@@ -52,17 +51,17 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
             throws WebApplicationException {
-        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
+        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
     }
 
     @Override
     public void shareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
-        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws WebApplicationException {
-        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
@@ -72,11 +71,11 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     // TODO
     @Override
-    public void sendOperation(CreateSpreadsheetOperation operation, String secret) {
+    public void replicateOperation(String operation, Operation.OPERATIONTYPE type, String secret) {
     }
 
     @Override
     public void deleteSpreadsheet(String sheetId, String password) throws WebApplicationException {
-        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password));
+        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
     }
 }
