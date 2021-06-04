@@ -25,6 +25,8 @@ import tp1.impl.serialization.Operation;
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Mediator {
 
@@ -220,15 +222,9 @@ public class Mediator {
 
         int retries = 0;
 
-        while (retries < 1) {
+        while (retries < 1) { //TODO
             try {
-//                System.out.println("BeforeRequest@SendOperation");
-
                 Response r = target.queryParam("type", type).queryParam("secret", secret).request().post(Entity.entity(operation, MediaType.APPLICATION_JSON));
-//                System.out.println(target.getUri().toString());
-//                System.out.println("AfterRequest@SendOperation");
-
-                System.out.println(r.getStatus());
 
                 if (r.getStatus() == 204) {
                     return r.getStatus();
@@ -306,5 +302,33 @@ public class Mediator {
         }
 
         return 500;
+    }
+
+
+    public static String[] askForOperations(Long startVersion, String secret, String serverURI) {
+        WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
+        int retries = 0;
+
+        while (retries < MAX_RETRIES) {
+            try {
+                Response r = target.queryParam("version", startVersion).queryParam("secret", secret).request().get();
+
+                if (r.getStatus() == 200) {
+                    return r.readEntity(String[].class);
+                }
+                retries++;
+            } catch (ProcessingException pe) {
+                System.out.println("Timeout occurred");
+                pe.printStackTrace();
+                retries++;
+                try {
+                    Thread.sleep(RETRY_PERIOD);
+                } catch (InterruptedException e) {
+                    // nothing to be done here, if this happens we will just retry sooner.
+                }
+                System.out.println("Retrying to execute request.");
+            }
+        }
+        return null;
     }
 }

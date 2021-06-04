@@ -9,6 +9,8 @@ import tp1.impl.serialization.Operation;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.util.RangeValues;
 
+import java.util.List;
+
 public class SpreadsheetRest implements RestSpreadsheets {
 
     private SpreadsheetResource resource;
@@ -73,6 +75,12 @@ public class SpreadsheetRest implements RestSpreadsheets {
     // TODO
     @Override
     public void replicateOperation(String operation, Operation.OPERATIONTYPE type, String secret) {
+    }
+
+    @Override
+    public String[] getOperations(Long startVersion, String secret) {
+        System.out.println("NO WRONG PLACE HAAAAAAAAAAA");
+        return null;
     }
 
     @Override

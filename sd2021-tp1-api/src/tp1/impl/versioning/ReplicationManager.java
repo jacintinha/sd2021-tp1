@@ -37,7 +37,7 @@ public class ReplicationManager {
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-        System.out.println(Arrays.toString(knownURIs));
+        System.out.println("INSIDE SEND REPLICAS");
 
         ExecutorService executor = Executors.newFixedThreadPool(knownURIs.length);
 
@@ -52,7 +52,7 @@ public class ReplicationManager {
         executor.shutdown();
 
         // As soon as we receive one ACK we can proceed
-        while (!acked.get() && !executor.isTerminated()) ;
+        while (!acked.get()) ;
         //TODO not terminated
     }
 

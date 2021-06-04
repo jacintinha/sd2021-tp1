@@ -4,7 +4,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
 import tp1.impl.serialization.Operation;
+import tp1.impl.serialization.OperationQueue;
 import tp1.impl.util.RangeValues;
+
+import java.util.List;
 
 
 @Path(RestSpreadsheets.PATH)
@@ -170,9 +173,27 @@ public interface RestSpreadsheets {
     @Path("/delete/{userId}")
     void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("secret") String secret);
 
+    /**
+     *
+     * @param operation
+     * @param type
+     * @param secret
+     */
     @POST
     @Path("/operation")
     @Consumes(MediaType.APPLICATION_JSON)
     void replicateOperation(String operation, @QueryParam("type") Operation.OPERATIONTYPE type, @QueryParam("secret") String secret);
+
+
+    /**
+     *
+     * @param startVersion
+     * @param secret
+     * @return
+     */
+    @GET
+    @Path("/operation")
+    @Produces(MediaType.APPLICATION_JSON)
+    String[] getOperations(@QueryParam("version") Long startVersion, @QueryParam("secret") String secret);
 
 }

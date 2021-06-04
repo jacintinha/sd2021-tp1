@@ -10,11 +10,15 @@ import tp1.api.service.util.Result;
 import tp1.impl.serialization.*;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.storage.Storage;
+import tp1.impl.util.Mediator;
 import tp1.impl.util.RangeValues;
 import tp1.impl.util.zookeeper.ZookeeperProcessor;
 import tp1.impl.versioning.ReplicationManager;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class SpreadsheetRep implements RestSpreadsheets {
 
@@ -88,7 +92,9 @@ public class SpreadsheetRep implements RestSpreadsheets {
         synchronized (this) {
             String result = this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
             CreateSpreadsheetOperation operation = new CreateSpreadsheetOperation(sheet);
+            System.out.println("BEFORE REPLICATE");
             replicate(operation, Operation.OPERATIONTYPE.CREATE);
+            System.out.println("AFTER REPLICATE");
             this.replicationManager.incrementVersion();
             return result;
         }
@@ -96,12 +102,16 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
     @Override
     public Spreadsheet getSpreadsheet(String sheetId, String userId, String password, Long version) throws WebApplicationException {
+        //CHAMAR TODO
+        askForOperations(0L, this.secret, zk.getPrimary());
         if (!checkPrimary() && !checkVersion(version)) {
             // Redirect
             //TODO ASK FOR OPERATIONS
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
+            askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary());
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
+        System.out.println("WHERE ARE WE? " + serverURI);
         return this.parseResult(this.resource.getSpreadsheet(sheetId, userId, password));
     }
 
@@ -115,6 +125,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
         if (!checkPrimary() && !checkVersion(version)) {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/values")).queryParam("userId", userId).queryParam("password", password).build();
+            askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary());
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         return this.parseResult(this.resource.getSpreadsheetValues(sheetId, userId, password));
@@ -181,7 +192,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
-        //TODO LATER
+        //TODO LATER increment
     }
 
     @Override
@@ -190,26 +201,62 @@ public class SpreadsheetRep implements RestSpreadsheets {
             case CREATE:
                 CreateSpreadsheetOperation create = this.json.fromJson(operation, CreateSpreadsheetOperation.class);
                 this.resource.createSpreadsheet(create.getSheet(), null, secret);
+                this.replicationManager.incrementVersion();
                 break;
             case UPDATECELL:
                 UpdateCellSpreadsheetOperation update = this.json.fromJson(operation, UpdateCellSpreadsheetOperation.class);
                 this.resource.updateCell(update.getSheetId(), update.getCell(), update.getRawValue(), null, null, secret);
+                this.replicationManager.incrementVersion();
                 break;
             case DELETE:
                 DeleteSpreadsheetOperation delete = this.json.fromJson(operation, DeleteSpreadsheetOperation.class);
                 this.resource.deleteSpreadsheet(delete.getSheetId(), null, secret);
+                this.replicationManager.incrementVersion();
                 break;
             case SHARE:
                 ShareSpreadsheetOperation share = this.json.fromJson(operation, ShareSpreadsheetOperation.class);
                 this.resource.shareSpreadsheet(share.getSheetId(), share.getUserId(), null, secret);
+                this.replicationManager.incrementVersion();
                 break;
             case UNSHARE:
                 ShareSpreadsheetOperation unshare = this.json.fromJson(operation, ShareSpreadsheetOperation.class);
                 this.resource.unshareSpreadsheet(unshare.getSheetId(), unshare.getUserId(), null, secret);
+                this.replicationManager.incrementVersion();
                 break;
             default:
                 break;
         }
+
+    }
+
+    @Override
+    public String[] getOperations(Long startVersion, String secret) {
+
+        if(this.replicationManager.getCurrentVersion() >= startVersion) {
+            List<Operation> list = this.operationQueue.getHistory(startVersion.intValue());
+            String [] a = new String[list.size()];
+            int i = 0;
+            for (Operation o: list) {
+                a[i] =  json.toJson(o);
+                i++;
+            }
+            return a;
+        }
+        return null;
+    }
+
+    private void askForOperations(Long startVersion, String secret, String serverURI) {
+        String[] a = Mediator.askForOperations(startVersion, secret, serverURI);
+        // TODO TOMORROW
+        System.out.println("TRIAL: ");
+        assert a != null;
+        CreateSpreadsheetOperation c = json.fromJson(a[0], CreateSpreadsheetOperation.class);
+        System.out.println(c.getClass());
+        System.out.println("END");
+
+        String fail = null;
+        fail.getBytes();
+        //TODO EXECUTE OPERATIONS
 
     }
 }
