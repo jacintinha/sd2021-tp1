@@ -39,8 +39,8 @@ public class SpreadsheetRepServer {
 
             ReplicationManager repManager = new ReplicationManager();
             ResourceConfig config = new ResourceConfig();
-            config.register(new SpreadsheetRep(domain, serverURI, args[1], repManager));
             config.register(new VersionFilter(repManager));
+            config.register(new SpreadsheetRep(domain, serverURI, args[1], repManager));
 
             JdkHttpServerFactory.createHttpServer(URI.create(serverURI), config, SSLContext.getDefault());
 

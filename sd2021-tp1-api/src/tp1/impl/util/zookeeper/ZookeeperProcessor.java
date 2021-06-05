@@ -1,6 +1,7 @@
 package tp1.impl.util.zookeeper;
 
 import org.apache.zookeeper.*;
+import tp1.impl.server.rest.resources.SpreadsheetRep;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,15 +14,17 @@ public class ZookeeperProcessor implements Watcher {
     private final ZooKeeper zk;
     private final String domain;
     private final String serverURI;
+    private final SpreadsheetRep resource;
 
     /**
      * @param hostPort the port to run at
      */
-    public ZookeeperProcessor(String hostPort, String domain, String serverURI) throws Exception {
+    public ZookeeperProcessor(String hostPort, String domain, String serverURI, SpreadsheetRep resource) throws Exception {
         this.zk = new ZooKeeper(hostPort, 3000, this);
         this.domain = domain;
         this.serverURI = serverURI;
         this.primaryURL = "";
+        this.resource = resource;
 
         // Create PERSISTENT
         this.createPersistent("/" + this.domain);
@@ -52,8 +55,11 @@ public class ZookeeperProcessor implements Watcher {
                     Collections.sort(lst);
                     // TODO check even getPath
                     String primaryURI = new String(zk.getData(path + "/" + lst.get(0), false, null));
-                    System.out.println("Primary is now: " + primaryURI);
-                    setPrimary(primaryURI);
+                    if (!getPrimary().equals(primaryURI)) {
+                        System.out.println("Primary is now: " + primaryURI);
+                        setPrimary(primaryURI);
+                        resource.newPrimary(primaryURI);
+                    }
                 } catch (KeeperException | InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -79,7 +85,7 @@ public class ZookeeperProcessor implements Watcher {
 
     }
 
-    public void setPrimary(String primaryURL) {
+    private void setPrimary(String primaryURL) {
         this.primaryURL = primaryURL;
     }
 
@@ -87,7 +93,7 @@ public class ZookeeperProcessor implements Watcher {
         return this.primaryURL;
     }
 
-    public String write(String path, CreateMode mode) {
+    private String write(String path, CreateMode mode) {
         try {
             return this.zk.create(path, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, mode);
         } catch (KeeperException | InterruptedException e) {
@@ -96,7 +102,7 @@ public class ZookeeperProcessor implements Watcher {
         }
     }
 
-    public String write(String path, String value, CreateMode mode) {
+    private String write(String path, String value, CreateMode mode) {
         try {
             return this.zk.create(path, value.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, mode);
         } catch (KeeperException | InterruptedException e) {
@@ -105,18 +111,9 @@ public class ZookeeperProcessor implements Watcher {
         }
     }
 
-    public List<String> getChildren(String path, Watcher watch) {
+    private List<String> getChildren(String path, Watcher watch) {
         try {
             return this.zk.getChildren(path, watch);
-        } catch (KeeperException | InterruptedException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public List<String> getChildren(String path) {
-        try {
-            return this.zk.getChildren(path, false);
         } catch (KeeperException | InterruptedException e) {
             e.printStackTrace();
             return null;

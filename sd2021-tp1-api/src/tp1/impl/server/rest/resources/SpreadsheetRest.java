@@ -73,7 +73,7 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     // TODO
     @Override
-    public void replicateOperation(String operation, String secret) {
+    public void replicateOperation(String operation, String secret, Long version) {
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.util.List;
 @Path(RestSpreadsheets.PATH)
 public interface RestSpreadsheets {
 
-    String HEADER_VERSION = "sheetsserver-version";
+    String HEADER_VERSION = "Sheetsserver-version";
 
     String PATH = "/spreadsheets";
 
@@ -28,7 +28,7 @@ public interface RestSpreadsheets {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     String createSpreadsheet(Spreadsheet sheet, @QueryParam("password") String password,
-                             @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                             @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -44,7 +44,7 @@ public interface RestSpreadsheets {
     @DELETE
     @Path("/{sheetId}")
     void deleteSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("password") String password,
-                           @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                           @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -62,7 +62,7 @@ public interface RestSpreadsheets {
     @Path("/{sheetId}")
     @Produces(MediaType.APPLICATION_JSON)
     Spreadsheet getSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("userId") String userId,
-                               @QueryParam("password") String password, @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                               @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -80,7 +80,7 @@ public interface RestSpreadsheets {
     @Produces(MediaType.APPLICATION_JSON)
     RangeValues importValues(@PathParam("sheetId") String sheetId,
                              @QueryParam("userId") String userId, @QueryParam("range") String range,
-                             @QueryParam("secret") String secret, @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                             @QueryParam("secret") String secret, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -99,7 +99,7 @@ public interface RestSpreadsheets {
     @Produces(MediaType.APPLICATION_JSON)
     String[][] getSpreadsheetValues(@PathParam("sheetId") String sheetId,
                                     @QueryParam("userId") String userId, @QueryParam("password") String password,
-                                    @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                                    @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -120,7 +120,7 @@ public interface RestSpreadsheets {
     @Consumes(MediaType.APPLICATION_JSON)
     void updateCell(@PathParam("sheetId") String sheetId, @PathParam("cell") String cell, String rawValue,
                     @QueryParam("userId") String userId, @QueryParam("password") String password,
-                    @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                    @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -139,7 +139,7 @@ public interface RestSpreadsheets {
     @POST
     @Path("/{sheetId}/share/{userId}")
     void shareSpreadsheet(@PathParam("sheetId") String sheetId, @PathParam("userId") String userId,
-                          @QueryParam("password") String password, @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                          @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -157,7 +157,7 @@ public interface RestSpreadsheets {
     @DELETE
     @Path("/{sheetId}/share/{userId}")
     void unshareSpreadsheet(@PathParam("sheetId") String sheetId, @PathParam("userId") String userId,
-                            @QueryParam("password") String password, @HeaderParam(RestSpreadsheets.HEADER_VERSION) Long version);
+                            @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
     /**
      * Deletes all user's spreadsheets.
@@ -178,7 +178,7 @@ public interface RestSpreadsheets {
     @POST
     @Path("/operation")
     @Consumes(MediaType.APPLICATION_JSON)
-    void replicateOperation(String operation, @QueryParam("secret") String secret);
+    void replicateOperation(String operation, @QueryParam("secret") String secret, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**

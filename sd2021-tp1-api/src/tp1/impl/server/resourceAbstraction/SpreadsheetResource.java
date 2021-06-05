@@ -68,9 +68,8 @@ public class SpreadsheetResource implements Spreadsheets {
             String uuid = UUID.randomUUID().toString();
             sheet.setSheetId(uuid);
             sheet.setSheetURL(this.serverURI + "/spreadsheets/" + uuid);
-            //TODO sheet.setSheetURL(this.serverURI + "/spreadsheets/" + sheet.getSheetId());
-            // Add the spreadsheet to the map of spreadsheets
         }
+        // TODO sheet.setSheetURL(this.serverURI + "/spreadsheets/" + sheet.getSheetId());
 
         synchronized (this) {
             this.storage.put(sheet);

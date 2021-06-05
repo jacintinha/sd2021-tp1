@@ -12,10 +12,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ReplicationManager {
 
-    private final AtomicLong version;
+    private final AtomicLong version = new AtomicLong();
+    private final AtomicBoolean gettingOperations;
 
     public ReplicationManager() {
-        this.version = new AtomicLong();
+        this.gettingOperations = new AtomicBoolean();
     }
 
     public void incrementVersion() {
@@ -25,6 +26,10 @@ public class ReplicationManager {
     public long getCurrentVersion() {
         return this.version.get();
     }
+
+    public boolean isGettingOperations() { return this.gettingOperations.get();}
+
+    public void setGettingOperations(boolean value) { this.gettingOperations.set(value);}
 
     public void sendToReplicas(String operationEncoding, String domain, String serverURI, String secret) {
         String serviceName = domain + ":" + SpreadsheetServer.SERVICE;

@@ -31,6 +31,7 @@ public class Mediator {
     public final static String USERS_WSDL = "/users/?wsdl";
     public final static String SPREADSHEETS_WSDL = "/spreadsheets/?wsdl";
 
+    // TODO
     public final static int MAX_RETRIES = 3;
     public final static long RETRY_PERIOD = 1000;
     public final static int CONNECTION_TIMEOUT = 1000;
@@ -224,6 +225,8 @@ public class Mediator {
             try {
                 Response r = target.queryParam("secret", secret).request().post(Entity.entity(operation, MediaType.APPLICATION_JSON));
 
+                System.out.println("CODE: " + r.getStatus());
+
                 if (r.getStatus() == 204) {
                     return r.getStatus();
                 }
@@ -302,12 +305,12 @@ public class Mediator {
         return 500;
     }
 
-
     public static List<String> askForOperations(Long startVersion, String secret, String serverURI) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
         int retries = 0;
 
-        while (retries < MAX_RETRIES) {
+        // TODO
+        while (retries < 1) {
             try {
                 Response r = target.queryParam("version", startVersion).queryParam("secret", secret).request().get();
 
