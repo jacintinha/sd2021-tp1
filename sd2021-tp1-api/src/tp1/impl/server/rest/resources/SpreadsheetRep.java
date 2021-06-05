@@ -54,14 +54,19 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
         // If I'm the new primary, ask for operations
         URI[] replicas = Discovery.getInstance().knownUrisOf(this.domain + ":" + SpreadsheetServer.SERVICE);
-
+        List<String> list = null;
+        int nOperations = 0;
         for (URI uri: replicas) {
             String destination = uri.toString();
             if (destination.equals(this.serverURI)) {
-                this.askForOperations(this.replicationManager.getCurrentVersion(), this.secret, destination);
+                List<String> temp = this.askForOperations(this.replicationManager.getCurrentVersion(), this.secret, destination);
+                if(temp != null && nOperations < temp.size()) {
+                    nOperations = temp.size();
+                    list = temp;
+                }
             }
         }
-
+        this.execute(list);
     }
 
     /**
@@ -121,7 +126,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
             // TODO SYNCHRONIZE
             if (!this.replicationManager.isGettingOperations()) {
-                askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary());
+                execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -141,7 +146,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/values")).queryParam("userId", userId).queryParam("password", password).build();
             if (!this.replicationManager.isGettingOperations()) {
-                askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary());
+                execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -217,12 +222,9 @@ public class SpreadsheetRep implements RestSpreadsheets {
     @Override
     public void replicateOperation(String operationEncoding, String secret, Long version) {
 
-        System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        System.err.println(version);
         System.err.println(this.replicationManager.getCurrentVersion());
         if (!checkVersion(version)) {
-            System.out.println(version);
-            askForOperations(this.replicationManager.getCurrentVersion(), this.secret, this.zk.getPrimary());
+            execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
         }
 
 
@@ -275,22 +277,19 @@ public class SpreadsheetRep implements RestSpreadsheets {
         return null;
     }
 
-    private void askForOperations(Long startVersion, String secret, String serverURI) {
+    private List<String> askForOperations(Long startVersion, String secret, String serverURI) {
         this.replicationManager.setGettingOperations(true);
+        return Mediator.askForOperations(startVersion, secret, serverURI);
+    }
 
-        System.out.println("I'M HERE");
-        System.out.println("INFO: Asking for operations");
-        List<String> operations = Mediator.askForOperations(startVersion, secret, serverURI);
-
+    private void execute(List<String> operations) {
+        // Execute operations TODO synch
         if (operations == null) {
             return;
         }
-
-        // Execute operations TODO synch
         for (String operationEncoding : operations) {
             this.replicateOperation(operationEncoding, this.secret, this.replicationManager.getCurrentVersion());
         }
-
         this.replicationManager.setGettingOperations(false);
     }
 }
