@@ -33,9 +33,9 @@ public class Mediator {
 
     // TODO
     public final static int MAX_RETRIES = 5;
-    public final static long RETRY_PERIOD = 1000;
-    public final static int CONNECTION_TIMEOUT = 1000;
-    public final static int REPLY_TIMEOUT = 600;
+    public final static long RETRY_PERIOD = 5000;
+    public final static int CONNECTION_TIMEOUT = 5000;
+    public final static int REPLY_TIMEOUT = 1000;
 
     private static WebTarget restSetUp(String serverUrl, String path) {
 
@@ -224,8 +224,6 @@ public class Mediator {
             try {
                 Response r = target.queryParam("secret", secret).request().header(RestSpreadsheets.HEADER_VERSION, currentVersion).post(Entity.entity(operation, MediaType.APPLICATION_JSON));
 
-                System.out.println("CODE: " + r.getStatus());
-
                 if (r.getStatus() == 204) {
                     return r.getStatus();
                 }
@@ -258,7 +256,7 @@ public class Mediator {
         short retries = 0;
 
         // Deleting user's spreadsheets must be done eventually
-        while (retries < 100) {
+        while (retries < MAX_RETRIES) {
             try {
                 Response r = target.path(userId).queryParam("password", password).queryParam("secret", secret).request().delete();
 
@@ -282,7 +280,7 @@ public class Mediator {
         System.out.println("Sending request to server.");
         short retries = 0;
 
-        while (retries < 100) {
+        while (retries < MAX_RETRIES) {
 
             try {
                 spreadsheets.deleteUserSpreadsheets(userId, secret);
@@ -309,7 +307,7 @@ public class Mediator {
         int retries = 0;
 
         // TODO
-        while (retries < 1) {
+        while (retries < MAX_RETRIES) {
             try {
                 Response r = target.queryParam("version", startVersion).queryParam("secret", secret).request().get();
 

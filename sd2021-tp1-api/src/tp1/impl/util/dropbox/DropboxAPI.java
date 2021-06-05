@@ -6,9 +6,11 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
+import jakarta.ws.rs.ProcessingException;
 import org.pac4j.scribe.builder.api.DropboxApi20;
 import tp1.api.Spreadsheet;
 import tp1.config.DropboxConfig;
+import tp1.impl.util.Mediator;
 import tp1.impl.util.dropbox.arguments.*;
 import tp1.impl.util.dropbox.replies.ListFolderReturn;
 import tp1.impl.util.dropbox.replies.ListFolderReturn.FolderEntry;
@@ -51,35 +53,25 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, createFolder);
 
-        Response r;
-
-        try {
-            r = service.execute(createFolder);
-            if (r.getCode() == 429) {
-                int a = -1;
-                a = Integer.parseInt(r.getHeader("Retry-After"));
-                System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
-                //Thread.sleep(a);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        //TODO Codes (print message?)
-        if (r.getCode() == 200 || r.getCode() == 409) {
-            if (r.getCode() == 409) {
-                System.out.println("Folder already existed.");
-            }
-            return true;
-        } else {
-            System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
+        int retries = 0;
+        while (retries < Mediator.MAX_RETRIES) {
             try {
-                System.err.println(r.getBody());
-            } catch (IOException e) {
-                System.err.println("No body in the response");
+                Response r = service.execute(createFolder);
+                // 409 means folder already exists
+                if(r.getCode() == 200 || r.getCode() == 409)
+                    return true;
+                if (r.getCode() == 429) {
+                    retries++;
+                    Thread.sleep(Integer.parseInt(r.getHeader("Retry-After")));
+                } else {
+                    return false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                retries++;
             }
-            return false;
         }
+        return false;
     }
 
     public boolean delete(String path) {
@@ -90,32 +82,25 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, delete);
 
-        Response r = null;
-
-        try {
-            r = service.execute(delete);
-            if (r.getCode() == 429) {
-                int a = -1;
-                a = Integer.parseInt(r.getHeader("Retry-After"));
-                System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
-                //Thread.sleep(a);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        //TODO Codes (print message?)
-        if (r.getCode() == 200 || r.getCode() == 409) {
-            return true;
-        } else {
-            System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
+        int retries = 0;
+        while (retries < Mediator.MAX_RETRIES) {
             try {
-                System.err.println(r.getBody());
-            } catch (IOException e) {
-                System.err.println("No body in the response");
+                Response r = service.execute(delete);
+                // 409 path not found
+                if(r.getCode() == 200 || r.getCode() == 409)
+                    return true;
+                if (r.getCode() == 429) {
+                    retries++;
+                    Thread.sleep(Integer.parseInt(r.getHeader("Retry-After")));
+                } else {
+                    return false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                retries++;
             }
-            return false;
         }
+        return false;
     }
 
     public boolean deleteBatch(List<PathV2Args> entries) {
@@ -126,26 +111,24 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, deleteBatch);
 
-        Response r = null;
-
-        try {
-            r = service.execute(deleteBatch);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        //TODO Codes (print message?)
-        if (r.getCode() == 200) {
-            return true;
-        } else {
-            System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
+        int retries = 0;
+        while (retries < Mediator.MAX_RETRIES) {
             try {
-                System.err.println(r.getBody());
-            } catch (IOException e) {
-                System.err.println("No body in the response");
+                Response r = service.execute(deleteBatch);
+                if(r.getCode() == 200)
+                    return true;
+                if (r.getCode() == 429) {
+                    retries++;
+                    Thread.sleep(Integer.parseInt(r.getHeader("Retry-After")));
+                } else {
+                    return false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                retries++;
             }
-            return false;
         }
+        return false;
     }
 
     public boolean createFile(String path, Object sheet) {
@@ -157,33 +140,24 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, createFile);
 
-        Response r = null;
-
-        try {
-            r = service.execute(createFile);
-            if (r.getCode() == 429) {
-                int a = -1;
-                a = Integer.parseInt(r.getHeader("Retry-After"));
-                System.err.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
-                //Thread.sleep(a);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-
-        //TODO Codes (print message?)
-        if (r.getCode() == 200 || r.getCode() == 409) {
-            return true;
-        } else {
-            System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
+        int retries = 0;
+        while (retries < Mediator.MAX_RETRIES) {
             try {
-                System.err.println(r.getBody());
-            } catch (IOException e) {
-                System.err.println("No body in the response");
+                Response r = service.execute(createFile);
+                if(r.getCode() == 200)
+                    return true;
+                if (r.getCode() == 429) {
+                    retries++;
+                    Thread.sleep(Integer.parseInt(r.getHeader("Retry-After")));
+                } else {
+                    return false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                retries++;
             }
-            return false;
         }
+        return false;
     }
 
     public Spreadsheet getFile(String path) {
@@ -193,39 +167,29 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, getFile);
 
-        Response r;
-
-        try {
-            r = service.execute(getFile);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        //TODO Codes
-
-        if (r.getCode() == 429) {
-            int a = -1;
-            a = Integer.parseInt(r.getHeader("Retry-After"));
-            System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
-
-            //Thread.sleep(a);
-        }
-        if (r.getCode() == 200) {
+        int retries = 0;
+        while (retries < Mediator.MAX_RETRIES) {
             try {
-                return JSON.decode(r.getBody(), Spreadsheet.class);
-            } catch (IOException e) {
-                System.out.println("No body in the response");
-                return null;
+                Response r = service.execute(getFile);
+                if(r.getCode() == 200) {
+                    try {
+                        return JSON.decode(r.getBody(), Spreadsheet.class);
+                    } catch (IOException e) {
+                        return null;
+                    }
+                }
+                if (r.getCode() == 429) {
+                    retries++;
+                    Thread.sleep(Integer.parseInt(r.getHeader("Retry-After")));
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                retries++;
             }
-        } else {
-            System.err.println("HTTP Error Code: " + r.getCode() + ": " + r.getMessage());
-            try {
-                System.err.println(r.getBody());
-            } catch (IOException e) {
-                System.err.println("No body in the response");
-            }
-            return null;
         }
+        return null;
     }
 
     // rootDirectory has the form: domain-n/
