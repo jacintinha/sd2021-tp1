@@ -1,6 +1,6 @@
 package tp1.impl.serialization;
 
-public class UpdateCellSpreadsheetOperation implements Operation {
+public class UpdateCellSpreadsheetOperation {
 
     private String sheetId;
     private String cell;

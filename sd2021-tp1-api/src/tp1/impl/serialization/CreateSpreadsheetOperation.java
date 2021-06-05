@@ -2,7 +2,7 @@ package tp1.impl.serialization;
 
 import tp1.api.Spreadsheet;
 
-public class CreateSpreadsheetOperation implements Operation {
+public class CreateSpreadsheetOperation {
 
     private Spreadsheet sheet;
 

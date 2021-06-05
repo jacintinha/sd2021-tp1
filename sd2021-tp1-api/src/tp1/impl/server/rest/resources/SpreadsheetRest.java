@@ -5,7 +5,6 @@ import jakarta.ws.rs.core.Response;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
-import tp1.impl.serialization.Operation;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
 import tp1.impl.util.RangeValues;
 
@@ -30,19 +29,19 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public String createSpreadsheet(Spreadsheet sheet, String password,    Long version) throws WebApplicationException {
+    public String createSpreadsheet(Spreadsheet sheet, String password, Long version) throws WebApplicationException {
         return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 
 
     @Override
-    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password,  Long version) throws WebApplicationException {
+    public Spreadsheet getSpreadsheet(String sheetId, String userId, String password, Long version) throws WebApplicationException {
         return this.parseResult(this.resource.getSpreadsheet(sheetId, userId, password));
     }
 
 
     @Override
-    public RangeValues importValues(String sheetId, String userId, String range, String secret,    Long version) throws WebApplicationException {
+    public RangeValues importValues(String sheetId, String userId, String range, String secret, Long version) throws WebApplicationException {
         return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
     }
 
@@ -58,7 +57,7 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public void shareSpreadsheet(String sheetId, String userId, String password,   Long version) throws WebApplicationException {
+    public void shareSpreadsheet(String sheetId, String userId, String password, Long version) throws WebApplicationException {
         this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
     }
 
@@ -74,12 +73,11 @@ public class SpreadsheetRest implements RestSpreadsheets {
 
     // TODO
     @Override
-    public void replicateOperation(String operation, Operation.OPERATIONTYPE type, String secret) {
+    public void replicateOperation(String operation, String secret) {
     }
 
     @Override
-    public String[] getOperations(Long startVersion, String secret) {
-        System.out.println("NO WRONG PLACE HAAAAAAAAAAA");
+    public List<String> getOperations(Long startVersion, String secret) {
         return null;
     }
 

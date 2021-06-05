@@ -1,6 +1,6 @@
 package tp1.impl.serialization;
 
-public class ShareSpreadsheetOperation implements Operation {
+public class ShareSpreadsheetOperation {
 
     private String sheetId;
     private String userId;

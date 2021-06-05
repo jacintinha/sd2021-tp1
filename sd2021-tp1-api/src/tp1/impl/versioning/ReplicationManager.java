@@ -1,13 +1,10 @@
 package tp1.impl.versioning;
 
-import com.google.gson.Gson;
-import tp1.impl.serialization.Operation;
 import tp1.impl.server.rest.SpreadsheetServer;
 import tp1.impl.util.Mediator;
 import tp1.impl.util.discovery.Discovery;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,13 +12,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ReplicationManager {
 
-    private static Gson json;
-
     private final AtomicLong version;
 
     public ReplicationManager() {
         this.version = new AtomicLong();
-        json = new Gson();
     }
 
     public void incrementVersion() {
@@ -32,7 +26,7 @@ public class ReplicationManager {
         return this.version.get();
     }
 
-    public void sendToReplicas(Operation operation, Operation.OPERATIONTYPE type, String domain, String serverURI, String secret) {
+    public void sendToReplicas(String operationEncoding, String domain, String serverURI, String secret) {
         String serviceName = domain + ":" + SpreadsheetServer.SERVICE;
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
@@ -46,7 +40,7 @@ public class ReplicationManager {
         for (URI uri : knownURIs) {
             if (uri.toString().equals(serverURI)) continue;
 
-            Runnable worker = new ReplicationManager.SendOperationWorker(uri.toString(), json.toJson(operation), type, secret, acked);
+            Runnable worker = new ReplicationManager.SendOperationWorker(uri.toString(), operationEncoding, secret, acked);
             executor.execute(worker);
         }
         executor.shutdown();
@@ -62,22 +56,20 @@ public class ReplicationManager {
         private final String operation;
         private final String secret;
         private final AtomicBoolean acked;
-        private final Operation.OPERATIONTYPE type;
 
-        SendOperationWorker(String serverURI, String operation, Operation.OPERATIONTYPE type, String secret, AtomicBoolean acked) {
+        SendOperationWorker(String serverURI, String operation, String secret, AtomicBoolean acked) {
             this.serverURI = serverURI;
             this.operation = operation;
             this.secret = secret;
             this.acked = acked;
-            this.type = type;
         }
 
         @Override
         public void run() {
             // TODO
-            int res = Mediator.sendOperation(this.serverURI, operation, type, this.secret);
+            int res = Mediator.sendOperation(this.serverURI, operation, this.secret);
             if (res == 204) {
-                //TODO
+                // TODO
                 this.acked.set(true);
             }
         }

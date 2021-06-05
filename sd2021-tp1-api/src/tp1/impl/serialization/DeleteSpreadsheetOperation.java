@@ -1,6 +1,6 @@
 package tp1.impl.serialization;
 
-public class DeleteSpreadsheetOperation implements Operation {
+public class DeleteSpreadsheetOperation {
 
     private String sheetId;
 

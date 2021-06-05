@@ -60,6 +60,12 @@ public class DropboxAPI {
 
         try {
             r = service.execute(createFolder);
+            if (r.getCode() == 429) {
+                int a = -1;
+                a = Integer.parseInt(r.getHeader("Retry-After"));
+                System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
+                //Thread.sleep(a);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -93,6 +99,12 @@ public class DropboxAPI {
 
         try {
             r = service.execute(delete);
+            if (r.getCode() == 429) {
+                int a = -1;
+                a = Integer.parseInt(r.getHeader("Retry-After"));
+                System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
+                //Thread.sleep(a);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -154,8 +166,14 @@ public class DropboxAPI {
 
         try {
             r = service.execute(createFile);
+            if (r.getCode() == 429) {
+                int a = -1;
+                a = Integer.parseInt(r.getHeader("Retry-After"));
+                System.err.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
+
+                //Thread.sleep(a);
+            }
         } catch (Exception e) {
-            System.out.println("HELLO TEAM");
             e.printStackTrace();
             return false;
         }
@@ -192,8 +210,10 @@ public class DropboxAPI {
         //TODO Codes
 
         if (r.getCode() == 429) {
-            int a = Integer.parseInt(r.getHeader("Retry-After"));
+            int a = -1;
+            a = Integer.parseInt(r.getHeader("Retry-After"));
             System.out.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
+
             //Thread.sleep(a);
         }
         if (r.getCode() == 200) {

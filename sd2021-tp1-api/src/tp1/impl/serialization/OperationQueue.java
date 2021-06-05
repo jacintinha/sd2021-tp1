@@ -6,29 +6,30 @@ import java.util.Queue;
 
 public class OperationQueue {
 
-    List<Operation> history;
-    Queue<Operation> queue;
+    // String is the encoding of SheetsOperation
+    List<String> history;
+    Queue<SheetsOperation> queue;
 
     public OperationQueue() {
         this.history = new LinkedList<>();
         this.queue = new LinkedList<>();
     }
 
-    public synchronized void addToHistory(Operation operation) {
-        this.history.add(operation);
+    public synchronized void addToHistory(String operationEncoding) {
+        this.history.add(operationEncoding);
     }
 
-    public synchronized void addToQueue(Operation operation) {
-        this.queue.add(operation);
-    }
-    
-    public Operation execute() {
-        Operation operation = this.queue.remove();
-        this.history.add(operation);
-        return operation;
-    }
+//    public synchronized void addToQueue(SheetsOperation operation) {
+//        this.queue.add(operation);
+//    }
+//
+//    public SheetsOperation execute() {
+//        SheetsOperation operation = this.queue.remove();
+//        this.history.add(operation);
+//        return operation;
+//    }
 
-    public List<Operation> getHistory(int nOperation) {
+    public List<String> getHistory(int nOperation) {
         return this.history.subList(nOperation, this.history.size());
     }
 

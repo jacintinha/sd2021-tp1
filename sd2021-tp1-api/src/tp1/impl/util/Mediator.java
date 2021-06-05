@@ -20,12 +20,10 @@ import tp1.api.service.soap.SheetsException;
 import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.soap.SoapUsers;
 import tp1.api.service.soap.UsersException;
-import tp1.impl.serialization.Operation;
 
 import javax.xml.namespace.QName;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.LinkedList;
 import java.util.List;
 
 public class Mediator {
@@ -36,7 +34,7 @@ public class Mediator {
     public final static int MAX_RETRIES = 3;
     public final static long RETRY_PERIOD = 1000;
     public final static int CONNECTION_TIMEOUT = 1000;
-    public final static int REPLY_TIMEOUT = 600;
+    public final static int REPLY_TIMEOUT = 1000;
 
     private static WebTarget restSetUp(String serverUrl, String path) {
 
@@ -217,14 +215,14 @@ public class Mediator {
         return null;
     }
 
-    public static int sendOperation(String serverURI, String operation, Operation.OPERATIONTYPE type, String secret) {
+    public static int sendOperation(String serverURI, String operation, String secret) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
 
         int retries = 0;
 
-        while (retries < 1) { //TODO
+        while (retries < MAX_RETRIES) { // TODO
             try {
-                Response r = target.queryParam("type", type).queryParam("secret", secret).request().post(Entity.entity(operation, MediaType.APPLICATION_JSON));
+                Response r = target.queryParam("secret", secret).request().post(Entity.entity(operation, MediaType.APPLICATION_JSON));
 
                 if (r.getStatus() == 204) {
                     return r.getStatus();
@@ -305,7 +303,7 @@ public class Mediator {
     }
 
 
-    public static String[] askForOperations(Long startVersion, String secret, String serverURI) {
+    public static List<String> askForOperations(Long startVersion, String secret, String serverURI) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
         int retries = 0;
 
@@ -314,7 +312,7 @@ public class Mediator {
                 Response r = target.queryParam("version", startVersion).queryParam("secret", secret).request().get();
 
                 if (r.getStatus() == 200) {
-                    return r.readEntity(String[].class);
+                    return r.readEntity(List.class);
                 }
                 retries++;
             } catch (ProcessingException pe) {
