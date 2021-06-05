@@ -6,19 +6,18 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
-import com.google.gson.Gson;
 import org.pac4j.scribe.builder.api.DropboxApi20;
 import tp1.api.Spreadsheet;
 import tp1.config.DropboxConfig;
 import tp1.impl.util.dropbox.arguments.*;
 import tp1.impl.util.dropbox.replies.ListFolderReturn;
 import tp1.impl.util.dropbox.replies.ListFolderReturn.FolderEntry;
+import tp1.impl.util.encoding.JSON;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
-
 
 public class DropboxAPI {
     private static final String apiKey = DropboxConfig.API_KEY;
@@ -36,23 +35,19 @@ public class DropboxAPI {
     private static final String LIST_FOLDER_URL = "https://api.dropboxapi.com/2/files/list_folder";
     private static final String LIST_FOLDER_CONTINUE_URL = "https://api.dropboxapi.com/2/files/list_folder/continue";
 
-
     private final OAuth20Service service;
     private final OAuth2AccessToken accessToken;
-
-    private final Gson json;
 
     public DropboxAPI() {
         service = new ServiceBuilder(apiKey).apiSecret(apiSecret).build(DropboxApi20.INSTANCE);
         accessToken = new OAuth2AccessToken(accessTokenStr);
-        json = new Gson();
     }
 
     public boolean createDirectory(String directoryName) {
         OAuthRequest createFolder = new OAuthRequest(Verb.POST, CREATE_FOLDER_V2_URL);
         createFolder.addHeader("Content-Type", JSON_CONTENT_TYPE);
 
-        createFolder.setPayload(json.toJson(new CreateFolderV2Args("/" + directoryName, false)));
+        createFolder.setPayload(JSON.encode(new CreateFolderV2Args("/" + directoryName, false)));
 
         service.signRequest(accessToken, createFolder);
 
@@ -91,7 +86,7 @@ public class DropboxAPI {
         OAuthRequest delete = new OAuthRequest(Verb.POST, DELETE_V2_URL);
         delete.addHeader("Content-Type", JSON_CONTENT_TYPE);
 
-        delete.setPayload(json.toJson(new PathV2Args("/" + path)));
+        delete.setPayload(JSON.encode(new PathV2Args("/" + path)));
 
         service.signRequest(accessToken, delete);
 
@@ -127,7 +122,7 @@ public class DropboxAPI {
         OAuthRequest deleteBatch = new OAuthRequest(Verb.POST, DELETE_BATCH_V2_URL);
         deleteBatch.addHeader("Content-Type", JSON_CONTENT_TYPE);
 
-        deleteBatch.setPayload(json.toJson(new EntryV2Args(entries)));
+        deleteBatch.setPayload(JSON.encode(new EntryV2Args(entries)));
 
         service.signRequest(accessToken, deleteBatch);
 
@@ -156,9 +151,9 @@ public class DropboxAPI {
     public boolean createFile(String path, Object sheet) {
         OAuthRequest createFile = new OAuthRequest(Verb.POST, CREATE_SPREADSHEET_V2_URL);
         createFile.addHeader("Content-Type", OCTET_STREAM_CONTENT_TYPE);
-        createFile.addHeader("Dropbox-API-Arg", json.toJson(new CreateSpreadsheetV2Args("/" + path, "overwrite", false, false, false)));
+        createFile.addHeader("Dropbox-API-Arg", JSON.encode(new CreateSpreadsheetV2Args("/" + path, "overwrite", false, false, false)));
 
-        createFile.setPayload(json.toJson(sheet).getBytes(StandardCharsets.UTF_8));
+        createFile.setPayload(JSON.encode(sheet).getBytes(StandardCharsets.UTF_8));
 
         service.signRequest(accessToken, createFile);
 
@@ -170,7 +165,6 @@ public class DropboxAPI {
                 int a = -1;
                 a = Integer.parseInt(r.getHeader("Retry-After"));
                 System.err.println("SLEEEEEEEEEEEEEEEPING FOR " + a);
-
                 //Thread.sleep(a);
             }
         } catch (Exception e) {
@@ -195,7 +189,7 @@ public class DropboxAPI {
     public Spreadsheet getFile(String path) {
         OAuthRequest getFile = new OAuthRequest(Verb.POST, GET_SPREADSHEET_V2_URL);
         getFile.addHeader("Content-Type", OCTET_STREAM_CONTENT_TYPE);
-        getFile.addHeader("Dropbox-API-Arg", json.toJson(new PathV2Args("/" + path)));
+        getFile.addHeader("Dropbox-API-Arg", JSON.encode(new PathV2Args("/" + path)));
 
         service.signRequest(accessToken, getFile);
 
@@ -218,7 +212,7 @@ public class DropboxAPI {
         }
         if (r.getCode() == 200) {
             try {
-                return this.json.fromJson(r.getBody(), Spreadsheet.class);
+                return JSON.decode(r.getBody(), Spreadsheet.class);
             } catch (IOException e) {
                 System.out.println("No body in the response");
                 return null;
@@ -240,7 +234,7 @@ public class DropboxAPI {
 
         OAuthRequest listDirectory = new OAuthRequest(Verb.POST, LIST_FOLDER_URL);
         listDirectory.addHeader("Content-Type", JSON_CONTENT_TYPE);
-        listDirectory.setPayload(json.toJson(new ListFolderArgs("/" + rootDirectory + user, false)));
+        listDirectory.setPayload(JSON.encode(new ListFolderArgs("/" + rootDirectory + user, false)));
 
         service.signRequest(accessToken, listDirectory);
 
@@ -256,7 +250,7 @@ public class DropboxAPI {
                     return null;
                 }
 
-                ListFolderReturn reply = json.fromJson(r.getBody(), ListFolderReturn.class);
+                ListFolderReturn reply = JSON.decode(r.getBody(), ListFolderReturn.class);
 
                 for (FolderEntry e : reply.getEntries()) {
                     directoryContents.add(new PathV2Args("/" + rootDirectory + e.toString()));
@@ -267,7 +261,7 @@ public class DropboxAPI {
                     listDirectory = new OAuthRequest(Verb.POST, LIST_FOLDER_CONTINUE_URL);
                     listDirectory.addHeader("Content-Type", JSON_CONTENT_TYPE);
                     //In this case the arguments is just an object containing the cursor that was returned in the previous reply.
-                    listDirectory.setPayload(json.toJson(new ListFolderContinueArgs(reply.getCursor())));
+                    listDirectory.setPayload(JSON.encode(new ListFolderContinueArgs(reply.getCursor())));
                     service.signRequest(accessToken, listDirectory);
                 } else {
                     break; //There are no more elements to read. Operation can terminate.
