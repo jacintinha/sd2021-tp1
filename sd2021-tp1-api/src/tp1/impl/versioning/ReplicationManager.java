@@ -12,10 +12,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ReplicationManager {
 
-    private final AtomicLong version = new AtomicLong();
+    private final AtomicLong version;
     private final AtomicBoolean gettingOperations;
 
     public ReplicationManager() {
+        this.version = new AtomicLong();
         this.gettingOperations = new AtomicBoolean();
     }
 
@@ -45,7 +46,7 @@ public class ReplicationManager {
         for (URI uri : knownURIs) {
             if (uri.toString().equals(serverURI)) continue;
 
-            Runnable worker = new ReplicationManager.SendOperationWorker(uri.toString(), operationEncoding, secret, acked);
+            Runnable worker = new ReplicationManager.SendOperationWorker(uri.toString(), operationEncoding, secret, acked, this.getCurrentVersion());
             executor.execute(worker);
         }
         executor.shutdown();
@@ -61,18 +62,20 @@ public class ReplicationManager {
         private final String operation;
         private final String secret;
         private final AtomicBoolean acked;
+        private final Long currentVersion;
 
-        SendOperationWorker(String serverURI, String operation, String secret, AtomicBoolean acked) {
+        SendOperationWorker(String serverURI, String operation, String secret, AtomicBoolean acked, Long currentVersion) {
             this.serverURI = serverURI;
             this.operation = operation;
             this.secret = secret;
             this.acked = acked;
+            this.currentVersion = currentVersion;
         }
 
         @Override
         public void run() {
             // TODO
-            int res = Mediator.sendOperation(this.serverURI, operation, this.secret);
+            int res = Mediator.sendOperation(this.serverURI, operation, this.secret, currentVersion);
             if (res == 204) {
                 // TODO
                 this.acked.set(true);

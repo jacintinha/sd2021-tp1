@@ -98,7 +98,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     }
 
     @Override
-    public String createSpreadsheet(Spreadsheet sheet, String password, Long version) throws WebApplicationException {
+    public String createSpreadsheet(Long version, Spreadsheet sheet, String password) throws WebApplicationException {
         System.out.println("VERSION@CREATE:" + version);
         if (!checkPrimary()) {
             // Redirect
@@ -217,13 +217,14 @@ public class SpreadsheetRep implements RestSpreadsheets {
     @Override
     public void replicateOperation(String operationEncoding, String secret, Long version) {
 
-        System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
-        System.out.println(version);
-        System.out.println(this.replicationManager.getCurrentVersion());
+        System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        System.err.println(version);
+        System.err.println(this.replicationManager.getCurrentVersion());
         if (!checkVersion(version)) {
             System.out.println(version);
             askForOperations(this.replicationManager.getCurrentVersion(), this.secret, this.zk.getPrimary());
         }
+
 
         SheetsOperation o = new SheetsOperation(operationEncoding);
         SheetsOperation.Operation type = o.getType();
@@ -276,6 +277,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
     private void askForOperations(Long startVersion, String secret, String serverURI) {
         this.replicationManager.setGettingOperations(true);
+
         System.out.println("I'M HERE");
         System.out.println("INFO: Asking for operations");
         List<String> operations = Mediator.askForOperations(startVersion, secret, serverURI);

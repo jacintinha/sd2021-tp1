@@ -29,7 +29,7 @@ public class SpreadsheetRest implements RestSpreadsheets {
     }
 
     @Override
-    public String createSpreadsheet(Spreadsheet sheet, String password, Long version) throws WebApplicationException {
+    public String createSpreadsheet(Long version, Spreadsheet sheet, String password) throws WebApplicationException {
         return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 

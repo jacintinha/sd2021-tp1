@@ -32,7 +32,7 @@ public class Mediator {
     public final static String SPREADSHEETS_WSDL = "/spreadsheets/?wsdl";
 
     // TODO
-    public final static int MAX_RETRIES = 3;
+    public final static int MAX_RETRIES = 5;
     public final static long RETRY_PERIOD = 1000;
     public final static int CONNECTION_TIMEOUT = 1000;
     public final static int REPLY_TIMEOUT = 600;
@@ -42,8 +42,7 @@ public class Mediator {
         ClientConfig config = new ClientConfig();
         // how much time until we timeout when opening the TCP connection to the server
         config.property(ClientProperties.CONNECT_TIMEOUT, CONNECTION_TIMEOUT);
-        // how much time do we wait for the reply of the server after sending the
-        // request
+        // how much time do we wait for the reply of the server after sending the request
         config.property(ClientProperties.READ_TIMEOUT, REPLY_TIMEOUT);
         Client client = ClientBuilder.newClient(config);
 
@@ -216,14 +215,14 @@ public class Mediator {
         return null;
     }
 
-    public static int sendOperation(String serverURI, String operation, String secret) {
+    public static int sendOperation(String serverURI, String operation, String secret, Long currentVersion) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
 
         int retries = 0;
 
         while (retries < MAX_RETRIES) { // TODO
             try {
-                Response r = target.queryParam("secret", secret).request().post(Entity.entity(operation, MediaType.APPLICATION_JSON));
+                Response r = target.queryParam("secret", secret).request().header(RestSpreadsheets.HEADER_VERSION, currentVersion).post(Entity.entity(operation, MediaType.APPLICATION_JSON));
 
                 System.out.println("CODE: " + r.getStatus());
 

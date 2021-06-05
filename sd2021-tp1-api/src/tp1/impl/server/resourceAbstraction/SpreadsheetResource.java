@@ -53,7 +53,7 @@ public class SpreadsheetResource implements Spreadsheets {
 
     @Override
     public Result<String> createSpreadsheet(Spreadsheet sheet, String password, String secret) {
-        Log.info("createSpreadsheet : " + sheet);
+        Log.info("createSpreadsheet : " + sheet + " @" + this.serverURI);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (!isValidated(secret)) {
             if (password == null || !checkSpreadsheet(sheet)) {

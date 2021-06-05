@@ -27,8 +27,7 @@ public interface RestSpreadsheets {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createSpreadsheet(Spreadsheet sheet, @QueryParam("password") String password,
-                             @HeaderParam(HEADER_VERSION) Long version);
+    String createSpreadsheet(@HeaderParam(HEADER_VERSION) Long version, Spreadsheet sheet, @QueryParam("password") String password);
 
 
     /**

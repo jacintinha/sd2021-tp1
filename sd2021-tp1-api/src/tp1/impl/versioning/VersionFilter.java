@@ -18,6 +18,7 @@ public class VersionFilter implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
-        response.getHeaders().add(RestSpreadsheets.HEADER_VERSION, this.repManager.getCurrentVersion());
+        System.out.println("INSIDE VERSION FILTER: " + this.repManager.getCurrentVersion());
+        response.getHeaders().add(RestSpreadsheets.HEADER_VERSION, repManager.getCurrentVersion());
     }
 }
