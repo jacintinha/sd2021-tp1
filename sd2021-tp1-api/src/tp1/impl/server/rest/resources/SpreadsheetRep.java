@@ -28,6 +28,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
     private final OperationQueue operationQueue = new OperationQueue();
     private String domain;
     private String secret;
+    private Thread queueThread;
 
     public SpreadsheetRep() {
     }
@@ -39,6 +40,11 @@ public class SpreadsheetRep implements RestSpreadsheets {
         this.secret = secret;
         this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
         this.replicationManager = repManager;
+
+        if (!checkPrimary()) {
+            this.executeQueue();
+        }
+
     }
 
     private <T> T parseResult(Result<T> result) throws WebApplicationException {
@@ -52,21 +58,25 @@ public class SpreadsheetRep implements RestSpreadsheets {
         if (!this.serverURI.equals(primaryURI)) return;
         System.out.println("INFO: New Primary");
 
+        this.queueThread.interrupt();
+
+        // TODO synch and flags
+
         // If I'm the new primary, ask for operations
         URI[] replicas = Discovery.getInstance().knownUrisOf(this.domain + ":" + SpreadsheetServer.SERVICE);
         List<String> list = null;
         int nOperations = 0;
-        for (URI uri: replicas) {
+        for (URI uri : replicas) {
             String destination = uri.toString();
             if (destination.equals(this.serverURI)) {
                 List<String> temp = this.askForOperations(this.replicationManager.getCurrentVersion(), this.secret, destination);
-                if(temp != null && nOperations < temp.size()) {
+                if (temp != null && nOperations < temp.size()) {
                     nOperations = temp.size();
                     list = temp;
                 }
             }
         }
-        this.execute(list);
+        this.enqueueOperations(list);
     }
 
     /**
@@ -112,7 +122,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
         }
         synchronized (this) {
             String result = this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
-            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Create, new CreateSpreadsheetOperation(sheet));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Create, this.replicationManager.getCurrentVersion() + 1, new CreateSpreadsheetOperation(sheet));
             this.replicate(operation);
             this.replicationManager.incrementVersion();
             return result;
@@ -126,7 +136,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
             // TODO SYNCHRONIZE
             if (!this.replicationManager.isGettingOperations()) {
-                execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+                enqueueOperations(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -146,7 +156,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/values")).queryParam("userId", userId).queryParam("password", password).build();
             if (!this.replicationManager.isGettingOperations()) {
-                execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+                enqueueOperations(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -161,11 +171,12 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/" + cell)).queryParam("userId", userId).queryParam("password", password).build(rawValue);
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-
-        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
-        SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.UpdateCell, new UpdateCellSpreadsheetOperation(sheetId, cell, rawValue));
-        this.replicate(operation);
-        this.replicationManager.incrementVersion();
+        synchronized (this) {
+            this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.UpdateCell, this.replicationManager.getCurrentVersion() + 1, new UpdateCellSpreadsheetOperation(sheetId, cell, rawValue));
+            this.replicate(operation);
+            this.replicationManager.incrementVersion();
+        }
     }
 
     @Override
@@ -175,10 +186,13 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
-        SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Share, new ShareSpreadsheetOperation(sheetId, userId));
-        this.replicate(operation);
-        this.replicationManager.incrementVersion();
+        synchronized (this) {
+
+            this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Share, this.replicationManager.getCurrentVersion() + 1, new ShareSpreadsheetOperation(sheetId, userId));
+            this.replicate(operation);
+            this.replicationManager.incrementVersion();
+        }
     }
 
     @Override
@@ -188,10 +202,12 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/share/" + userId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
-        SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Unshare, new ShareSpreadsheetOperation(sheetId, userId));
-        this.replicate(operation);
-        this.replicationManager.incrementVersion();
+        synchronized (this) {
+            this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Unshare, this.replicationManager.getCurrentVersion() + 1, new ShareSpreadsheetOperation(sheetId, userId));
+            this.replicate(operation);
+            this.replicationManager.incrementVersion();
+        }
     }
 
     @Override
@@ -201,10 +217,12 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("password", password).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
-        SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Delete, new DeleteSpreadsheetOperation(sheetId));
-        this.replicate(operation);
-        this.replicationManager.incrementVersion();
+        synchronized (this) {
+            this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Delete, this.replicationManager.getCurrentVersion() + 1, new DeleteSpreadsheetOperation(sheetId));
+            this.replicate(operation);
+            this.replicationManager.incrementVersion();
+        }
     }
 
     @Override
@@ -213,20 +231,24 @@ public class SpreadsheetRep implements RestSpreadsheets {
             URI uri = UriBuilder.fromPath(this.getPrimaryPath("delete/" + userId)).queryParam("secret", secret).build();
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
-        SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.DeleteUserSheets, new DeleteUserSpreadsheetOperation(userId, secret));
-        this.replicate(operation);
-        this.replicationManager.incrementVersion();
+        synchronized (this) {
+            this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
+            SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.DeleteUserSheets, this.replicationManager.getCurrentVersion() + 1, new DeleteUserSpreadsheetOperation(userId, secret));
+            this.replicate(operation);
+            this.replicationManager.incrementVersion();
+        }
     }
 
     @Override
-    public void replicateOperation(String operationEncoding, String secret, Long version) {
+    public synchronized void replicateOperation(String operationEncoding, String secret, Long version) {
 
-        System.err.println(this.replicationManager.getCurrentVersion());
-        if (!checkVersion(version)) {
-            execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+        System.err.println("Version received @ replicateOperation: " + version);
+        if (this.replicationManager.getCurrentVersion() != version) {
+            // We lost one operation
+            this.operationQueue.enqueue(new SheetsOperation(operationEncoding));
+//            execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+            return;
         }
-
 
         SheetsOperation o = new SheetsOperation(operationEncoding);
         SheetsOperation.Operation type = o.getType();
@@ -234,36 +256,33 @@ public class SpreadsheetRep implements RestSpreadsheets {
             case Create:
                 CreateSpreadsheetOperation create = o.args(CreateSpreadsheetOperation.class);
                 this.resource.createSpreadsheet(create.getSheet(), null, secret);
-                this.replicationManager.incrementVersion();
                 break;
             case UpdateCell:
                 UpdateCellSpreadsheetOperation update = o.args(UpdateCellSpreadsheetOperation.class);
                 this.resource.updateCell(update.getSheetId(), update.getCell(), update.getRawValue(), null, null, secret);
-                this.replicationManager.incrementVersion();
                 break;
             case Delete:
                 DeleteSpreadsheetOperation delete = o.args(DeleteSpreadsheetOperation.class);
                 this.resource.deleteSpreadsheet(delete.getSheetId(), null, secret);
-                this.replicationManager.incrementVersion();
                 break;
             case Share:
                 ShareSpreadsheetOperation share = o.args(ShareSpreadsheetOperation.class);
                 this.resource.shareSpreadsheet(share.getSheetId(), share.getUserId(), null, secret);
-                this.replicationManager.incrementVersion();
                 break;
             case Unshare:
                 ShareSpreadsheetOperation unshare = o.args(ShareSpreadsheetOperation.class);
                 this.resource.unshareSpreadsheet(unshare.getSheetId(), unshare.getUserId(), null, secret);
-                this.replicationManager.incrementVersion();
                 break;
             case DeleteUserSheets:
                 DeleteUserSpreadsheetOperation deleteUserSheets = o.args(DeleteUserSpreadsheetOperation.class);
                 this.resource.deleteUserSpreadsheets(deleteUserSheets.getUserId(), deleteUserSheets.getSecret());
-                this.replicationManager.incrementVersion();
                 break;
             default:
                 break;
         }
+        // TODO
+        this.operationQueue.addToHistory(operationEncoding);
+        this.replicationManager.incrementVersion();
 
     }
 
@@ -282,14 +301,35 @@ public class SpreadsheetRep implements RestSpreadsheets {
         return Mediator.askForOperations(startVersion, secret, serverURI);
     }
 
-    private void execute(List<String> operations) {
+    private void enqueueOperations(List<String> operations) {
         // Execute operations TODO synch
         if (operations == null) {
             return;
         }
+
         for (String operationEncoding : operations) {
-            this.replicateOperation(operationEncoding, this.secret, this.replicationManager.getCurrentVersion());
+            this.operationQueue.enqueue(new SheetsOperation(operationEncoding));
         }
+
+        // TODO
         this.replicationManager.setGettingOperations(false);
     }
+
+    private void executeQueue () {
+       this.queueThread = new Thread(() -> {
+            while (true) {
+                if (this.operationQueue.peekQueue() != null && this.operationQueue.peekQueue() == this.replicationManager.getCurrentVersion()+1)
+                    this.replicateOperation(this.operationQueue.getNextOperation(), this.secret, this.replicationManager.getCurrentVersion());
+                else {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+       this.queueThread.start();
+    }
+
 }
