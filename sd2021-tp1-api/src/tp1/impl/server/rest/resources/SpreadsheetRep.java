@@ -68,14 +68,18 @@ public class SpreadsheetRep implements RestSpreadsheets {
         int nOperations = 0;
         for (URI uri : replicas) {
             String destination = uri.toString();
-            if (destination.equals(this.serverURI)) {
-                List<String> temp = this.askForOperations(this.replicationManager.getCurrentVersion(), this.secret, destination);
-                if (temp != null && nOperations < temp.size()) {
-                    nOperations = temp.size();
-                    list = temp;
-                }
+            if (destination.equals(this.serverURI))
+                continue;
+
+            this.replicationManager.setGettingOperations(true);
+            List<String> temp = this.askForOperations(this.secret, destination);
+            if (temp != null && nOperations < temp.size()) {
+                nOperations = temp.size();
+                list = temp;
             }
+            this.replicationManager.setGettingOperations(false);
         }
+
         this.enqueueOperations(list);
     }
 
@@ -106,10 +110,13 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
 
     private void replicate(SheetsOperation operation) {
+        // Being called from a synchronized environment
+
         String operationEncoding = operation.encode();
-        // blocking until you receive one ACK todo SYNCHRONIZE
+        // Blocking until you receive one ACK
         this.replicationManager.sendToReplicas(operationEncoding, this.domain, this.serverURI, this.secret);
         this.operationQueue.addToHistory(operationEncoding);
+
     }
 
     @Override
@@ -134,9 +141,8 @@ public class SpreadsheetRep implements RestSpreadsheets {
         if (!checkPrimary() && !checkVersion(version)) {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId)).queryParam("userId", userId).queryParam("password", password).build();
-            // TODO SYNCHRONIZE
             if (!this.replicationManager.isGettingOperations()) {
-                enqueueOperations(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+                enqueueOperations(askForOperations(this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -156,7 +162,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath(sheetId + "/values")).queryParam("userId", userId).queryParam("password", password).build();
             if (!this.replicationManager.isGettingOperations()) {
-                enqueueOperations(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
+                enqueueOperations(askForOperations(this.secret, zk.getPrimary()));
             }
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
@@ -187,7 +193,6 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
         synchronized (this) {
-
             this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
             SheetsOperation operation = new SheetsOperation(SheetsOperation.Operation.Share, this.replicationManager.getCurrentVersion() + 1, new ShareSpreadsheetOperation(sheetId, userId));
             this.replicate(operation);
@@ -279,15 +284,15 @@ public class SpreadsheetRep implements RestSpreadsheets {
             default:
                 break;
         }
-        // TODO
+
         this.operationQueue.addToHistory(operationEncoding);
         this.replicationManager.incrementVersion();
-
     }
 
     @Override
     public List<String> getOperations(Long startVersion, String secret) {
         System.out.println("INFO: Getting operations");
+
         if (this.replicationManager.getCurrentVersion() >= startVersion) {
             return this.operationQueue.getHistory(startVersion.intValue());
         }
@@ -295,30 +300,37 @@ public class SpreadsheetRep implements RestSpreadsheets {
         return null;
     }
 
-    private List<String> askForOperations(Long startVersion, String secret, String serverURI) {
+    private List<String> askForOperations(String secret, String serverURI) {
         this.replicationManager.setGettingOperations(true);
-        return Mediator.askForOperations(startVersion, secret, serverURI);
+        return Mediator.askForOperations(this.replicationManager.getCurrentVersion()+1, secret, serverURI);
     }
 
     private void enqueueOperations(List<String> operations) {
-        // Execute operations TODO synch
+        // Execute operations
         if (operations == null) {
             return;
         }
 
-        for (String operationEncoding : operations) {
-            this.operationQueue.enqueue(new SheetsOperation(operationEncoding));
-        }
+        // Idea is to run operations when we're done enqueuing
+        synchronized (this) {
+            for (String operationEncoding : operations) {
+                this.operationQueue.enqueue(new SheetsOperation(operationEncoding));
+            }
 
-        // TODO
-        this.replicationManager.setGettingOperations(false);
+            this.replicationManager.setGettingOperations(false);
+        }
     }
 
     private void executeQueue () {
        this.queueThread = new Thread(() -> {
             while (true) {
-                if (this.operationQueue.peekQueue() != null && this.operationQueue.peekQueue() == this.replicationManager.getCurrentVersion()+1)
+                if (this.operationQueue.peekQueueVersion() != null && this.operationQueue.peekQueueVersion() == this.replicationManager.getCurrentVersion()+1) {
+                    this.replicationManager.setGettingOperations(true);
                     this.replicateOperation(this.operationQueue.getNextOperation(), this.secret, this.replicationManager.getCurrentVersion());
+                    if (this.operationQueue.peekQueueVersion() == null || this.operationQueue.peekQueueVersion() != this.replicationManager.getCurrentVersion()+1) {
+                        this.replicationManager.setGettingOperations(false);
+                    }
+                }
                 else {
                     try {
                         Thread.sleep(500);

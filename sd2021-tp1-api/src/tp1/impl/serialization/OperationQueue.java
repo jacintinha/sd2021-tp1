@@ -37,7 +37,7 @@ public class OperationQueue {
         }
     }
 
-    public synchronized Long peekQueue() {
+    public synchronized Long peekQueueVersion() {
         try {
             return this.queue.peek().getVersion();
         } catch (NullPointerException e) {
