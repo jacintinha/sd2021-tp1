@@ -244,9 +244,8 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
         System.err.println("Version received @ replicateOperation: " + version);
         if (this.replicationManager.getCurrentVersion() != version) {
-            // We lost one operation
+            // We lost, at least, one operation
             this.operationQueue.enqueue(new SheetsOperation(operationEncoding));
-//            execute(askForOperations(this.replicationManager.getCurrentVersion(), this.secret, zk.getPrimary()));
             return;
         }
 

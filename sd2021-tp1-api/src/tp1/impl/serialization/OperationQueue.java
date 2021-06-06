@@ -25,11 +25,11 @@ public class OperationQueue {
         this.history.add(operationEncoding);
     }
 
-    public void enqueue(SheetsOperation operation) {
+    public synchronized void enqueue(SheetsOperation operation) {
         this.queue.add(operation);
     }
 
-    public String getNextOperation() {
+    public synchronized String getNextOperation() {
         try {
             return this.queue.poll().encode();
         } catch (NullPointerException e) {
@@ -37,7 +37,7 @@ public class OperationQueue {
         }
     }
 
-    public Long peekQueue() {
+    public synchronized Long peekQueue() {
         try {
             return this.queue.peek().getVersion();
         } catch (NullPointerException e) {
@@ -45,7 +45,7 @@ public class OperationQueue {
         }
     }
 
-    public List<String> getHistory(int nOperation) {
+    public synchronized List<String> getHistory(int nOperation) {
         return this.history.subList(nOperation, this.history.size());
     }
 
