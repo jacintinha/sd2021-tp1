@@ -6,7 +6,6 @@ import com.github.scribejava.core.model.OAuthRequest;
 import com.github.scribejava.core.model.Response;
 import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth20Service;
-import jakarta.ws.rs.ProcessingException;
 import org.pac4j.scribe.builder.api.DropboxApi20;
 import tp1.api.Spreadsheet;
 import tp1.config.DropboxConfig;
@@ -202,11 +201,10 @@ public class DropboxAPI {
 
         service.signRequest(accessToken, listDirectory);
 
-        Response r = null;
 
         try {
             while (true) {
-                r = service.execute(listDirectory);
+                Response r = service.execute(listDirectory);
 
                 if (r.getCode() != 200) {
                     System.err.println("Failed to list directory. Status " + r.getCode() + ": " + r.getMessage());

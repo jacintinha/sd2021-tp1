@@ -6,8 +6,6 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 import tp1.api.service.rest.RestSpreadsheets;
 
-import java.io.IOException;
-
 @Provider
 public class VersionFilter implements ContainerResponseFilter {
     ReplicationManager repManager;
@@ -17,8 +15,7 @@ public class VersionFilter implements ContainerResponseFilter {
     }
 
     @Override
-    public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
-        System.out.println("INSIDE VERSION FILTER: " + this.repManager.getCurrentVersion());
+    public void filter(ContainerRequestContext request, ContainerResponseContext response) {
         response.getHeaders().add(RestSpreadsheets.HEADER_VERSION, repManager.getCurrentVersion());
     }
 }

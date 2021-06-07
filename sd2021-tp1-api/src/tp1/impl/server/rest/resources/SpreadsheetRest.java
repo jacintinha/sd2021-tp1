@@ -2,6 +2,7 @@ package tp1.impl.server.rest.resources;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang3.NotImplementedException;
 import tp1.api.Spreadsheet;
 import tp1.api.service.rest.RestSpreadsheets;
 import tp1.api.service.util.Result;
@@ -71,14 +72,14 @@ public class SpreadsheetRest implements RestSpreadsheets {
         this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
     }
 
-    // TODO
     @Override
     public void replicateOperation(String operation, String secret, Long version) {
+        throw new NotImplementedException();
     }
 
     @Override
     public List<String> getOperations(Long startVersion, String secret) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override

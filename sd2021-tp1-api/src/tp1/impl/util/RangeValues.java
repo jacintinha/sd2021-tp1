@@ -8,10 +8,6 @@ public class RangeValues {
     }
 
     public RangeValues(String[][] values, long lastModified) {
-        super();
-        if (values == null || lastModified == 0) {
-            System.out.println("ºººººººººººººººººººººººSOMEONE DIED HERE.");
-        }
         this.values = values;
         this.lastModified = lastModified;
     }
@@ -32,4 +28,3 @@ public class RangeValues {
         this.lastModified = lastModified;
     }
 }
-

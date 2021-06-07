@@ -60,8 +60,6 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
         this.queueThread.interrupt();
 
-        // TODO synch and flags
-
         // If I'm the new primary, ask for operations
         URI[] replicas = Discovery.getInstance().knownUrisOf(this.domain + ":" + SpreadsheetServer.SERVICE);
         List<String> list = null;
@@ -121,7 +119,6 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
     @Override
     public String createSpreadsheet(Long version, Spreadsheet sheet, String password) throws WebApplicationException {
-        System.out.println("VERSION@CREATE:" + version);
         if (!checkPrimary()) {
             // Redirect
             URI uri = UriBuilder.fromPath(this.getPrimaryPath("")).queryParam("password", password).build(sheet);
@@ -147,7 +144,6 @@ public class SpreadsheetRep implements RestSpreadsheets {
             throw new WebApplicationException(Response.temporaryRedirect(uri).build());
         }
 
-        System.out.println("WHERE ARE WE? " + serverURI);
         return this.parseResult(this.resource.getSpreadsheet(sheetId, userId, password));
     }
 

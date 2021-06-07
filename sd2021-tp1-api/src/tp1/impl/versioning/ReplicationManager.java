@@ -37,8 +37,6 @@ public class ReplicationManager {
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
 
-        System.out.println("INSIDE SEND REPLICAS");
-
         ExecutorService executor = Executors.newFixedThreadPool(knownURIs.length);
 
         AtomicBoolean acked = new AtomicBoolean();
@@ -53,7 +51,6 @@ public class ReplicationManager {
 
         // As soon as we receive one ACK we can proceed
         while (!acked.get()) ;
-        //TODO not terminated
     }
 
     public static class SendOperationWorker implements Runnable {
@@ -74,10 +71,8 @@ public class ReplicationManager {
 
         @Override
         public void run() {
-            // TODO
             int res = Mediator.sendOperation(this.serverURI, operation, this.secret, currentVersion);
             if (res == 204) {
-                // TODO
                 this.acked.set(true);
             }
         }

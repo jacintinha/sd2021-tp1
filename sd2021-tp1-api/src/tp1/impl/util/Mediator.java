@@ -31,7 +31,6 @@ public class Mediator {
     public final static String USERS_WSDL = "/users/?wsdl";
     public final static String SPREADSHEETS_WSDL = "/spreadsheets/?wsdl";
 
-    // TODO
     public final static int MAX_RETRIES = 5;
     public final static long RETRY_PERIOD = 5000;
     public final static int CONNECTION_TIMEOUT = 5000;
@@ -89,6 +88,7 @@ public class Mediator {
 
     public static int getUser(String serverUrl, String userId, String password) {
         System.out.println("Sending request to server.");
+
         if (serverUrl.split("/")[3].equals("rest")) {
             return getUserRest(restSetUp(serverUrl, RestUsers.PATH), userId, password);
         }
@@ -97,16 +97,17 @@ public class Mediator {
 
     private static int getUserRest(WebTarget target, String userId, String password) {
         System.out.println("Sending request to server.");
-        short retries = 0;
-        while (retries < MAX_RETRIES) {
 
+        short retries = 0;
+
+        while (retries < MAX_RETRIES) {
             try {
                 Response r = target.path(userId).queryParam("password", password).request()
                         .accept(MediaType.APPLICATION_JSON).get();
 
                 return r.getStatus();
             } catch (ProcessingException pe) {
-                System.out.println("USERS: Timeout occurred");
+                System.out.println("@Users: Timeout occurred");
                 pe.printStackTrace();
                 retries++;
                 try {
@@ -159,6 +160,7 @@ public class Mediator {
 
     public static RangeValues getSpreadsheetRangeRest(WebTarget target, String userId, String range, String secret) {
         System.out.println("Sending request to server.");
+
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
@@ -173,11 +175,10 @@ public class Mediator {
 
                 return null;
             } catch (ProcessingException pe) {
-                System.out.println("SHEETS: Timeout occurred");
+                System.out.println("@Sheets: Timeout occurred");
                 pe.printStackTrace();
                 retries++;
                 try {
-                    // TODO removed / 100
                     Thread.sleep(RETRY_PERIOD);
                 } catch (InterruptedException e) {
                     // nothing to be done here, if this happens we will just retry sooner.
@@ -190,15 +191,14 @@ public class Mediator {
 
     public static RangeValues getSpreadsheetRangeSoap(SoapSpreadsheets spreadsheets, String userId, String sheetId, String range, String secret) {
         System.out.println("Sending request to server.");
+
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
 
             try {
-                System.out.println("Importing " + range);
                 return spreadsheets.importValues(sheetId, userId, range, secret);
             } catch (SheetsException e) {
-                System.out.println("Could not import range: " + range);
                 return null;
             } catch (WebServiceException wse) {
                 System.out.println("Communication error.");
@@ -218,9 +218,9 @@ public class Mediator {
     public static int sendOperation(String serverURI, String operation, String secret, Long currentVersion) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
 
-        int retries = 0;
+        short retries = 0;
 
-        while (retries < MAX_RETRIES) { // TODO
+        while (retries < MAX_RETRIES) {
             try {
                 Response r = target.queryParam("secret", secret).request().header(RestSpreadsheets.HEADER_VERSION, currentVersion).post(Entity.entity(operation, MediaType.APPLICATION_JSON));
 
@@ -253,6 +253,7 @@ public class Mediator {
 
     public static int deleteSpreadsheetsRest(WebTarget target, String userId, String password, String secret) {
         System.out.println("Sending request to server.");
+
         short retries = 0;
 
         // Deleting user's spreadsheets must be done eventually
@@ -278,13 +279,13 @@ public class Mediator {
 
     public static int deleteSpreadsheetsSoap(SoapSpreadsheets spreadsheets, String userId, String password, String secret) {
         System.out.println("Sending request to server.");
+
         short retries = 0;
 
         while (retries < MAX_RETRIES) {
 
             try {
                 spreadsheets.deleteUserSpreadsheets(userId, secret);
-                System.out.println("Deleting " + userId + "'s spreadsheets.");
                 return 200;
             } catch (WebServiceException wse) {
                 System.out.println("Communication error.");
@@ -304,9 +305,9 @@ public class Mediator {
 
     public static List<String> askForOperations(Long startVersion, String secret, String serverURI) {
         WebTarget target = restSetUp(serverURI, RestSpreadsheets.PATH + "/operation");
-        int retries = 0;
 
-        // TODO
+        short retries = 0;
+
         while (retries < MAX_RETRIES) {
             try {
                 Response r = target.queryParam("version", startVersion).queryParam("secret", secret).request().get();

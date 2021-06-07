@@ -23,7 +23,6 @@ public class Cache {
 
     public void updateEntry(String cacheId, String[][] values, long twServer) {
         CacheEntry entry = this.cache.get(cacheId);
-        // TODO null
 
         if (twServer > entry.getTwClient()) {
             entry.setValues(values);

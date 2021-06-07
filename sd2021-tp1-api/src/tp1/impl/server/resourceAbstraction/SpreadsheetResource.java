@@ -69,7 +69,6 @@ public class SpreadsheetResource implements Spreadsheets {
             sheet.setSheetId(uuid);
             sheet.setSheetURL(this.serverURI + "/spreadsheets/" + uuid);
         }
-        // TODO sheet.setSheetURL(this.serverURI + "/spreadsheets/" + sheet.getSheetId());
 
         synchronized (this) {
             this.storage.put(sheet);
@@ -264,11 +263,11 @@ public class SpreadsheetResource implements Spreadsheets {
 
                         String cacheId = sheetURL + "&" + range;
 
-                        // Check if T-Tc < EXPIRED_TIME
                         CacheEntry entry = sheetCache.getEntry(cacheId);
 
                         if (entry == null) {
                             Log.info("Value was not cached.");
+
                             RangeValues values = Mediator.getSpreadsheetRange(sheetURL, owner, sheetId, range, secret);
                             if (values != null) {
                                 sheetCache.newEntry(cacheId, values.getLastModified(), System.nanoTime(), values.getValues());
@@ -277,6 +276,7 @@ public class SpreadsheetResource implements Spreadsheets {
                             return null;
                         }
 
+                        // Check if T-Tc < EXPIRED_TIME
                         if (System.nanoTime() - entry.getTC() < Cache.EXPIRE_TIME) {
                             Log.info("Returning from cache.");
                             return entry.getValues();
