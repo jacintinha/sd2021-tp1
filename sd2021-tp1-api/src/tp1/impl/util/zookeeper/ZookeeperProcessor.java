@@ -8,8 +8,6 @@ import java.util.List;
 
 public class ZookeeperProcessor implements Watcher {
 
-    private static ZookeeperProcessor instance;
-
     private String primaryURL;
     private final ZooKeeper zk;
     private final String domain;

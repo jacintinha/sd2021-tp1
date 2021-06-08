@@ -1,6 +1,8 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
@@ -19,6 +21,7 @@ import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.google.GoogleAPI;
 import tp1.util.CellRange;
 
+import javax.print.DocFlavor;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,21 +54,31 @@ public class SpreadsheetResource implements Spreadsheets {
         }
     }
 
+    public Result<String> validateCreate (String password, Spreadsheet sheet) {
+        if (password == null || !checkSpreadsheet(sheet)) {
+            Log.info("Spreadsheet object or password invalid.");
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
+        }
+
+        if (this.getUser(sheet.getOwner(), password, this.domain) != 200) {
+            return Result.error(Result.ErrorCode.BAD_REQUEST);
+        }
+
+        // Generate UUID
+        return Result.ok(UUID.randomUUID().toString());
+    }
+
     @Override
     public Result<String> createSpreadsheet(Spreadsheet sheet, String password, String secret) {
         Log.info("createSpreadsheet : " + sheet + " @" + this.serverURI);
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (!isValidated(secret)) {
-            if (password == null || !checkSpreadsheet(sheet)) {
-                Log.info("Spreadsheet object or password invalid.");
-                return Result.error(Result.ErrorCode.BAD_REQUEST);
-            }
+            Result<String> result = validateCreate(password, sheet);
+            if(!result.isOK())
+                return result;
 
-            if (this.getUser(sheet.getOwner(), password, this.domain) != 200) {
-                return Result.error(Result.ErrorCode.BAD_REQUEST);
-            }
             // Generate UUID
-            String uuid = UUID.randomUUID().toString();
+            String uuid = result.value();
             sheet.setSheetId(uuid);
             sheet.setSheetURL(this.serverURI + "/spreadsheets/" + uuid);
         }
@@ -304,17 +317,8 @@ public class SpreadsheetResource implements Spreadsheets {
                 });
     }
 
-    @Override
-    public Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password, String secret) {
-        Log.info("updateCell : sheet = " + sheetId +
-                "; user = " + userId + "; pwd = " + password + "; cell = " + cell + "; rawValue " + rawValue);
+    public Result<Spreadsheet> validateUpdate(String sheetId, String userId, String cell, String rawValue, String password){
         Spreadsheet sheet;
-
-        if (isValidated(secret)) {
-            sheet = this.storage.get(sheetId);
-            return updateCellValue(cell, rawValue, sheet);
-        }
-
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null || rawValue == null || cell == null) {
             Log.info("SheetId, userId, rawValue or cell is null.");
@@ -334,14 +338,14 @@ public class SpreadsheetResource implements Spreadsheets {
 
                 // If user is owner
                 if (sheet.getOwner().equals(userId)) {
-                    return updateCellValue(cell, rawValue, sheet);
+                    return Result.ok(sheet);
                 }
 
                 // If user is in shared
                 Set<String> sharedWith = sheet.getSharedWith();
                 String sharedUser = userId + "@" + this.domain;
                 if (sharedWith != null && sharedWith.contains(sharedUser)) {
-                    return updateCellValue(cell, rawValue, sheet);
+                    return Result.ok(sheet);
                 }
             }
         } else {
@@ -357,6 +361,31 @@ public class SpreadsheetResource implements Spreadsheets {
         return Result.ok(null);
     }
 
+
+    @Override
+    public Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password, String secret) {
+        Log.info("updateCell : sheet = " + sheetId +
+                "; user = " + userId + "; pwd = " + password + "; cell = " + cell + "; rawValue " + rawValue);
+        Spreadsheet sheet;
+
+        if (isValidated(secret)) {
+            sheet = this.storage.get(sheetId);
+            return updateCellValue(cell, rawValue, sheet);
+        }
+
+        Result<Spreadsheet> result = validateUpdate(sheetId, userId, cell, rawValue, password);
+        if(!result.isOK()){
+            return Result.error(result.error());
+        }
+
+        if(result.value() == null){
+            return Result.ok(null);
+        }
+
+        return updateCellValue(cell, rawValue, result.value());
+    }
+
+
     @Override
     public Result<Void> shareSpreadsheet(String sheetId, String userId, String password, String secret) {
         Spreadsheet sheet;
@@ -369,6 +398,33 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.ok(null);
         }
 
+        Result<Void> result = validateShare(sheetId, userId, password);
+        if (!result.isOK()) {
+            return result;
+        }
+
+        synchronized (this) {
+            // Check if sheet still exists after breaking synchronized block
+            sheet = this.storage.get(sheetId);
+            if (sheet == null) {
+                return Result.error(Result.ErrorCode.NOT_FOUND);
+            }
+            Set<String> shared = sheet.getSharedWith();
+
+            if (shared == null) {
+                shared = new HashSet<>();
+            } else if (shared.contains(userId)) {
+                Log.info("Sheet has already been shared with the user");
+                return Result.error(Result.ErrorCode.CONFLICT);
+            }
+
+            shareSheet(userId, sheet, shared);
+        }
+        return Result.ok(null);
+    }
+
+    public Result<Void> validateShare(String sheetId, String userId, String password) {
+        Spreadsheet sheet;
         // Check if the sheetId and the userId are valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null) {
             Log.info("SheetId, userId null.");
@@ -402,24 +458,6 @@ public class SpreadsheetResource implements Spreadsheets {
         if (newUserStatusCode == 404) {
             return Result.error(Result.ErrorCode.NOT_FOUND);
         }
-
-        synchronized (this) {
-            // Check if sheet still exists after breaking synchronized block
-            sheet = this.storage.get(sheetId);
-            if (sheet == null) {
-                return Result.error(Result.ErrorCode.NOT_FOUND);
-            }
-            Set<String> shared = sheet.getSharedWith();
-
-            if (shared == null) {
-                shared = new HashSet<>();
-            } else if (shared.contains(userId)) {
-                Log.info("Sheet has already been shared with the user");
-                return Result.error(Result.ErrorCode.CONFLICT);
-            }
-
-            shareSheet(userId, sheet, shared);
-        }
         return Result.ok(null);
     }
 
@@ -440,39 +478,9 @@ public class SpreadsheetResource implements Spreadsheets {
             return Result.ok(null);
         }
 
-        // Check if user and sheet are valid, if not return HTTP BAD_REQUEST (400)
-        if (sheetId == null || userId == null) {
-            Log.info("SheetId, userId or password null.");
-            return Result.error(Result.ErrorCode.BAD_REQUEST);
-        }
-
-        String owner;
-        synchronized (this) {
-            sheet = this.storage.get(sheetId);
-
-            if (sheet == null) {
-                return Result.error(Result.ErrorCode.NOT_FOUND);
-            }
-            owner = sheet.getOwner();
-        }
-
-        int ownerStatusCode = this.getUser(owner, password, this.domain);
-
-        // Check if owner exists, if not return HTTP NOT_FOUND (404)
-        if (ownerStatusCode != 200) {
-            Log.info("User does not exist or password is incorrect.");
-            return Result.error(Result.ErrorCode.valueOf(Status.fromStatusCode(ownerStatusCode).name()));
-        }
-
-        String[] elems = userId.split("@");
-
-        String newUserId = elems[0];
-        String newUserDomain = elems[1];
-
-        int newUserStatusCode = this.getUser(newUserId, "", newUserDomain);
-
-        if (newUserStatusCode == 404) {
-            return Result.error(Result.ErrorCode.NOT_FOUND);
+        Result<Void> result = validateShare(sheetId, userId, password);
+        if (!result.isOK()) {
+            return result;
         }
 
         synchronized (this) {
@@ -513,18 +521,9 @@ public class SpreadsheetResource implements Spreadsheets {
         return Result.ok(null);
     }
 
-    @Override
-    public Result<Void> deleteSpreadsheet(String sheetId, String password, String secret) {
-        Log.info("deleteSpreadsheet : sheet = " + sheetId + "; pwd = " + password);
+    public Result<String> validateDelete(String sheetId, String password){
         Spreadsheet sheet;
         String owner;
-
-        if (isValidated(secret)) {
-            sheet = this.storage.get(sheetId);
-            this.storage.deleteSheet(sheetId, sheet.getOwner());
-            return Result.ok(null);
-        }
-
         // Check if data is valid, if not return HTTP CONFLICT (400)
         if (sheetId == null) {
             Log.info("SheetId null.");
@@ -543,21 +542,36 @@ public class SpreadsheetResource implements Spreadsheets {
 
         int userStatusCode = this.getUser(owner, password, this.domain);
 
+
         synchronized (this) {
             // Check if sheet still exists after breaking synchronized block
-            sheet = this.storage.get(sheetId);
-            if (sheet == null) {
-                Log.info("Sheet doesn't exist.");
-                return Result.error(Result.ErrorCode.NOT_FOUND);
-            }
             if (userStatusCode == 200) {
-                this.storage.deleteSheet(sheetId, owner);
+                return Result.ok(owner);
             } else if (userStatusCode == 403) {
                 return Result.error(Result.ErrorCode.FORBIDDEN);
             } else {
                 return Result.error(Result.ErrorCode.BAD_REQUEST);
             }
         }
+    }
+
+    @Override
+    public Result<Void> deleteSpreadsheet(String sheetId, String password, String secret) {
+        Log.info("deleteSpreadsheet : sheet = " + sheetId + "; pwd = " + password);
+        Spreadsheet sheet;
+
+        if (isValidated(secret)) {
+            sheet = this.storage.get(sheetId);
+            this.storage.deleteSheet(sheetId, sheet.getOwner());
+            return Result.ok(null);
+        }
+
+        Result<String> result = validateDelete(sheetId, password);
+        if(!result.isOK()){
+            return Result.error(result.error());
+        }
+
+        this.storage.deleteSheet(sheetId, result.value());
         return Result.ok(null);
     }
 

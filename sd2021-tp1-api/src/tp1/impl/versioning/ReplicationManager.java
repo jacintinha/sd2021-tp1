@@ -32,7 +32,7 @@ public class ReplicationManager {
 
     public void setGettingOperations(boolean value) { this.gettingOperations.set(value);}
 
-    public void sendToReplicas(String operationEncoding, String domain, String serverURI, String secret) {
+    public boolean sendToReplicas(String operationEncoding, String domain, String serverURI, String secret) {
         String serviceName = domain + ":" + SpreadsheetServer.SERVICE;
 
         URI[] knownURIs = Discovery.getInstance().knownUrisOf(serviceName);
@@ -51,6 +51,9 @@ public class ReplicationManager {
 
         // As soon as we receive one ACK we can proceed
         while (!acked.get()) ;
+
+
+        return acked.get();
     }
 
     public static class SendOperationWorker implements Runnable {
