@@ -1,8 +1,6 @@
 package tp1.impl.server.resourceAbstraction;
 
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import tp1.api.Spreadsheet;
 import tp1.api.engine.AbstractSpreadsheet;
@@ -21,7 +19,6 @@ import tp1.impl.util.discovery.Discovery;
 import tp1.impl.util.google.GoogleAPI;
 import tp1.util.CellRange;
 
-import javax.print.DocFlavor;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,7 +51,7 @@ public class SpreadsheetResource implements Spreadsheets {
         }
     }
 
-    public Result<String> validateCreate (String password, Spreadsheet sheet) {
+    public Result<String> validateCreate(String password, Spreadsheet sheet) {
         if (password == null || !checkSpreadsheet(sheet)) {
             Log.info("Spreadsheet object or password invalid.");
             return Result.error(Result.ErrorCode.BAD_REQUEST);
@@ -74,7 +71,7 @@ public class SpreadsheetResource implements Spreadsheets {
         // Check if sheet is valid, if not return HTTP BAD_REQUEST (400)
         if (!isValidated(secret)) {
             Result<String> result = validateCreate(password, sheet);
-            if(!result.isOK())
+            if (!result.isOK())
                 return result;
 
             // Generate UUID
@@ -317,7 +314,7 @@ public class SpreadsheetResource implements Spreadsheets {
                 });
     }
 
-    public Result<Spreadsheet> validateUpdate(String sheetId, String userId, String cell, String rawValue, String password){
+    public Result<Spreadsheet> validateUpdate(String sheetId, String userId, String cell, String rawValue, String password) {
         Spreadsheet sheet;
         // Check if user is valid, if not return HTTP BAD_REQUEST (400)
         if (sheetId == null || userId == null || rawValue == null || cell == null) {
@@ -374,11 +371,11 @@ public class SpreadsheetResource implements Spreadsheets {
         }
 
         Result<Spreadsheet> result = validateUpdate(sheetId, userId, cell, rawValue, password);
-        if(!result.isOK()){
+        if (!result.isOK()) {
             return Result.error(result.error());
         }
 
-        if(result.value() == null){
+        if (result.value() == null) {
             return Result.ok(null);
         }
 
@@ -521,7 +518,7 @@ public class SpreadsheetResource implements Spreadsheets {
         return Result.ok(null);
     }
 
-    public Result<String> validateDelete(String sheetId, String password){
+    public Result<String> validateDelete(String sheetId, String password) {
         Spreadsheet sheet;
         String owner;
         // Check if data is valid, if not return HTTP CONFLICT (400)
@@ -567,7 +564,7 @@ public class SpreadsheetResource implements Spreadsheets {
         }
 
         Result<String> result = validateDelete(sheetId, password);
-        if(!result.isOK()){
+        if (!result.isOK()) {
             return Result.error(result.error());
         }
 

@@ -57,7 +57,7 @@ public class DropboxAPI {
             try {
                 Response r = service.execute(createFolder);
                 // 409 means folder already exists
-                if(r.getCode() == 200 || r.getCode() == 409)
+                if (r.getCode() == 200 || r.getCode() == 409)
                     return true;
                 if (r.getCode() == 429) {
                     retries++;
@@ -86,7 +86,7 @@ public class DropboxAPI {
             try {
                 Response r = service.execute(delete);
                 // 409 path not found
-                if(r.getCode() == 200 || r.getCode() == 409)
+                if (r.getCode() == 200 || r.getCode() == 409)
                     return true;
                 if (r.getCode() == 429) {
                     retries++;
@@ -114,7 +114,7 @@ public class DropboxAPI {
         while (retries < Mediator.MAX_RETRIES) {
             try {
                 Response r = service.execute(deleteBatch);
-                if(r.getCode() == 200)
+                if (r.getCode() == 200)
                     return true;
                 if (r.getCode() == 429) {
                     retries++;
@@ -143,7 +143,7 @@ public class DropboxAPI {
         while (retries < Mediator.MAX_RETRIES) {
             try {
                 Response r = service.execute(createFile);
-                if(r.getCode() == 200)
+                if (r.getCode() == 200)
                     return true;
                 if (r.getCode() == 429) {
                     retries++;
@@ -170,7 +170,7 @@ public class DropboxAPI {
         while (retries < Mediator.MAX_RETRIES) {
             try {
                 Response r = service.execute(getFile);
-                if(r.getCode() == 200) {
+                if (r.getCode() == 200) {
                     try {
                         return JSON.decode(r.getBody(), Spreadsheet.class);
                     } catch (IOException e) {

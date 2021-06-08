@@ -28,9 +28,13 @@ public class ReplicationManager {
         return this.version.get();
     }
 
-    public boolean isGettingOperations() { return this.gettingOperations.get();}
+    public boolean isGettingOperations() {
+        return this.gettingOperations.get();
+    }
 
-    public void setGettingOperations(boolean value) { this.gettingOperations.set(value);}
+    public void setGettingOperations(boolean value) {
+        this.gettingOperations.set(value);
+    }
 
     public boolean sendToReplicas(String operationEncoding, String domain, String serverURI, String secret) {
         String serviceName = domain + ":" + SpreadsheetServer.SERVICE;

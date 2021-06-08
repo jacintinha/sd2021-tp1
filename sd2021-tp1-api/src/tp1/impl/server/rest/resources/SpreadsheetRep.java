@@ -112,10 +112,10 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
         String operationEncoding = operation.encode();
         // Blocking until you receive one ACK
-        if(this.replicationManager.sendToReplicas(operationEncoding, this.domain, this.serverURI, this.secret))
+        if (this.replicationManager.sendToReplicas(operationEncoding, this.domain, this.serverURI, this.secret))
             this.operationQueue.addToHistory(operationEncoding);
         else
-           throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     @Override
@@ -307,7 +307,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
 
     private List<String> askForOperations(String secret, String serverURI) {
         this.replicationManager.setGettingOperations(true);
-        return Mediator.askForOperations(this.replicationManager.getCurrentVersion()+1, secret, serverURI);
+        return Mediator.askForOperations(this.replicationManager.getCurrentVersion() + 1, secret, serverURI);
     }
 
     private void enqueueOperations(List<String> operations) {
@@ -326,17 +326,16 @@ public class SpreadsheetRep implements RestSpreadsheets {
         }
     }
 
-    private void executeQueue () {
-       this.queueThread = new Thread(() -> {
+    private void executeQueue() {
+        this.queueThread = new Thread(() -> {
             while (true) {
-                if (this.operationQueue.peekQueueVersion() != null && this.operationQueue.peekQueueVersion() == this.replicationManager.getCurrentVersion()+1) {
+                if (this.operationQueue.peekQueueVersion() != null && this.operationQueue.peekQueueVersion() == this.replicationManager.getCurrentVersion() + 1) {
                     this.replicationManager.setGettingOperations(true);
                     this.replicateOperation(this.operationQueue.getNextOperation(), this.secret, this.replicationManager.getCurrentVersion());
-                    if (this.operationQueue.peekQueueVersion() == null || this.operationQueue.peekQueueVersion() != this.replicationManager.getCurrentVersion()+1) {
+                    if (this.operationQueue.peekQueueVersion() == null || this.operationQueue.peekQueueVersion() != this.replicationManager.getCurrentVersion() + 1) {
                         this.replicationManager.setGettingOperations(false);
                     }
-                }
-                else {
+                } else {
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
@@ -345,7 +344,7 @@ public class SpreadsheetRep implements RestSpreadsheets {
                 }
             }
         });
-       this.queueThread.start();
+        this.queueThread.start();
     }
 
 }

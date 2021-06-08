@@ -13,6 +13,9 @@ public class ExternalStorage implements Storage {
 
     private String PATH;
     private final DropboxAPI dropbox = new DropboxAPI();
+    /**
+     * This resets when the server is reset but it still works.
+     */
     private final Map<String, Long> lastModified = new HashMap<>();
 
     public ExternalStorage() {
