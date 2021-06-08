@@ -1,10 +1,14 @@
 package tp1.impl.server.soap;
 
-import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import jakarta.xml.ws.Endpoint;
 import tp1.impl.server.soap.WS.SpreadsheetWS;
+import tp1.impl.util.InsecureHostnameVerifier;
 import tp1.impl.util.discovery.Discovery;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
@@ -28,13 +32,21 @@ public class SpreadsheetServer {
             String domain = args[0];
 
             String ip = InetAddress.getLocalHost().getHostAddress();
-            String serverURI = String.format("http://%s:%s/soap", ip, PORT);
+            String serverURI = String.format("https://%s:%s/soap", ip, PORT);
 
-            HttpServer server = HttpServer.create(new InetSocketAddress(ip, PORT), 0);
+            // This allows client code executed by this server to ignore hostname verification
+            HttpsURLConnection.setDefaultHostnameVerifier(new InsecureHostnameVerifier());
+
+            // Create an https configurator to define the SSL/TLS context
+            HttpsConfigurator configurator = new HttpsConfigurator(SSLContext.getDefault());
+
+            HttpsServer server = HttpsServer.create(new InetSocketAddress(ip, PORT), 0);
+
+            server.setHttpsConfigurator(configurator);
 
             server.setExecutor(Executors.newCachedThreadPool());
 
-            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS(domain, serverURI));
+            Endpoint soapSpreadsheetsEndpoint = Endpoint.create(new SpreadsheetWS(domain, serverURI, args[1]));
 
             soapSpreadsheetsEndpoint.publish(server.createContext(SOAP_SPREADSHEETS_PATH));
 

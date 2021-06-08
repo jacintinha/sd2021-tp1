@@ -3,6 +3,7 @@ package tp1.api.service.soap;
 import jakarta.jws.WebMethod;
 import jakarta.jws.WebService;
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
 
 @WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
 public interface SoapSpreadsheets {
@@ -88,12 +89,13 @@ public interface SoapSpreadsheets {
      * @param userId  - The user requesting the values
      * @param sheetId - the spreadsheet whose values are being retrieved.
      * @param range   - The range to import.
+     * @param secret  - The secret needed to execute this function.
      * @return 200, values
      * 204, null, if no values
      * @throws SheetsException otherwise
      */
     @WebMethod
-    String[][] importValues(String sheetId, String userId, String range) throws SheetsException;
+    RangeValues importValues(String sheetId, String userId, String range, String secret) throws SheetsException;
 
 
     /**
@@ -108,13 +110,12 @@ public interface SoapSpreadsheets {
     String[][] getSpreadsheetValues(String sheetId, String userId, String password) throws SheetsException;
 
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
-     * @throws SheetsException otherwise
+     * @param userId - the user whose sheets will be deleted.
+     * @param secret - the secret needed for this function to execute.
      */
     @WebMethod
-    void deleteUserSpreadsheets(String userId, String password) throws SheetsException;
+    void deleteUserSpreadsheets(String userId, String secret);
 
 }

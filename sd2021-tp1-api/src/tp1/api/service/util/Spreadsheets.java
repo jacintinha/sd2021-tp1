@@ -1,6 +1,7 @@
 package tp1.api.service.util;
 
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
 
 
 public interface Spreadsheets {
@@ -10,10 +11,11 @@ public interface Spreadsheets {
      *
      * @param sheet    - the spreadsheet to be created.
      * @param password - the password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 200 the sheetId;
      * 400 otherwise.
      */
-    Result<String> createSpreadsheet(Spreadsheet sheet, String password);
+    Result<String> createSpreadsheet(Spreadsheet sheet, String password, String secret);
 
 
     /**
@@ -21,12 +23,13 @@ public interface Spreadsheets {
      *
      * @param sheetId  - the sheet to be deleted.
      * @param password - the password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204 if the sheet was successful.
      * 404 if no sheet exists with the given sheetId.
      * 403 if the password is incorrect.
      * 400 otherwise.
      */
-    Result<Void> deleteSpreadsheet(String sheetId, String password);
+    Result<Void> deleteSpreadsheet(String sheetId, String password, String secret);
 
     /**
      * Retrieve a spreadsheet.
@@ -44,13 +47,13 @@ public interface Spreadsheets {
     /**
      * Retrieves the calculated values of a spreadsheet.
      *
-     * @param userId   - The user requesting the values
-     * @param sheetId  - the spreadsheet whose values are being retrieved.
-     * @param password - The password of the user performing the operation.
+     * @param sheetId - the spreadsheet whose values are being retrieved.
+     * @param userId  - The user requesting the values
+     * @param secret  - The secret necessary to run the function.
      * @return 200, if the operation is successful
      * 204, null, in case of no values
      */
-    Result<String[][]> importValues(String sheetId, String userId, String range);
+    Result<RangeValues> importValues(String sheetId, String userId, String range, String secret);
 
 
     /**
@@ -59,13 +62,14 @@ public interface Spreadsheets {
      * @param sheetId  - the sheet being shared.
      * @param userId   - the user that is being added to the list of shares.
      * @param password - The password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, in case of success.
      * 404, if either the spreadsheet or user do not exist
      * 409, if the sheet is already shared with the user
      * 403 if the password is incorrect.
      * 400, otherwise
      */
-    Result<Void> shareSpreadsheet(String sheetId, String userId, String password);
+    Result<Void> shareSpreadsheet(String sheetId, String userId, String password, String secret);
 
 
     /**
@@ -74,12 +78,13 @@ public interface Spreadsheets {
      * @param sheetId  - the sheet being shared.
      * @param userId   - the user that is being removed from the list of shares.
      * @param password - The password of the owner of the spreadsheet.
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, in case of success.
      * 404, if the spreadsheet, the user or the share do not exist
      * 403 if the password is incorrect.
      * 400, otherwise
      */
-    Result<Void> unshareSpreadsheet(String sheetId, String userId, String password);
+    Result<Void> unshareSpreadsheet(String sheetId, String userId, String password, String secret);
 
 
     /**
@@ -90,12 +95,13 @@ public interface Spreadsheets {
      * @param cell     - the cell being updated
      * @param rawValue - the new raw value of the cell
      * @param password - the password of the owner of the spreadsheet
+     * @param secret   - secret shared between servers (can be null)
      * @return 204, if the operation was successful
      * 404, if no spreadsheet exists with the given sheetid
      * 403, if the password is incorrect.
      * 400 otherwise
      **/
-    Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password);
+    Result<Void> updateCell(String sheetId, String cell, String rawValue, String userId, String password, String secret);
 
 
     /**
@@ -111,15 +117,14 @@ public interface Spreadsheets {
      */
     Result<String[][]> getSpreadsheetValues(String sheetId, String userId, String password);
 
+
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
+     * @param userId - the user whose sheets will be deleted.
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
-    Result<Void> deleteUserSpreadsheets(String userId, String password);
-
+    Result<Void> deleteUserSpreadsheets(String userId, String secret);
 
 }

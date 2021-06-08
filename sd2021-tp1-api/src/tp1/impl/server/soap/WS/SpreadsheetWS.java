@@ -6,6 +6,8 @@ import tp1.api.service.soap.SheetsException;
 import tp1.api.service.soap.SoapSpreadsheets;
 import tp1.api.service.util.Result;
 import tp1.impl.server.resourceAbstraction.SpreadsheetResource;
+import tp1.impl.storage.Storage;
+import tp1.impl.util.RangeValues;
 
 @WebService(serviceName = SoapSpreadsheets.NAME, targetNamespace = SoapSpreadsheets.NAMESPACE, endpointInterface = SoapSpreadsheets.INTERFACE)
 public class SpreadsheetWS implements SoapSpreadsheets {
@@ -15,8 +17,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     public SpreadsheetWS() {
     }
 
-    public SpreadsheetWS(String domain, String serverURI) {
-        this.resource = new SpreadsheetResource(domain, serverURI);
+    public SpreadsheetWS(String domain, String serverURI, String secret) {
+        this.resource = new SpreadsheetResource(domain, serverURI, Storage.INTERNAL_STORAGE, secret);
     }
 
     private <T> T parseResult(Result<T> result) throws SheetsException {
@@ -28,7 +30,7 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     @Override
     public String createSpreadsheet(Spreadsheet sheet, String password) throws SheetsException {
-        return this.parseResult(this.resource.createSpreadsheet(sheet, password));
+        return this.parseResult(this.resource.createSpreadsheet(sheet, password, null));
     }
 
     @Override
@@ -37,8 +39,8 @@ public class SpreadsheetWS implements SoapSpreadsheets {
     }
 
     @Override
-    public String[][] importValues(String sheetId, String userId, String range) throws SheetsException {
-        return this.parseResult(this.resource.importValues(sheetId, userId, range));
+    public RangeValues importValues(String sheetId, String userId, String range, String secret) throws SheetsException {
+        return this.parseResult(this.resource.importValues(sheetId, userId, range, secret));
     }
 
     @Override
@@ -48,26 +50,29 @@ public class SpreadsheetWS implements SoapSpreadsheets {
 
     public void updateCell(String sheetId, String cell, String rawValue, String userId, String password)
             throws SheetsException {
-        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password));
+        this.parseResult(this.resource.updateCell(sheetId, cell, rawValue, userId, password, null));
     }
 
     @Override
     public void shareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.shareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
     public void unshareSpreadsheet(String sheetId, String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password));
+        this.parseResult(this.resource.unshareSpreadsheet(sheetId, userId, password, null));
     }
 
     @Override
-    public void deleteUserSpreadsheets(String userId, String password) throws SheetsException {
-        this.parseResult(this.resource.deleteUserSpreadsheets(userId, password));
+    public void deleteUserSpreadsheets(String userId, String secret) {
+        try {
+            this.parseResult(this.resource.deleteUserSpreadsheets(userId, secret));
+        } catch (SheetsException ignored) {
+        }
     }
 
     @Override
     public void deleteSpreadsheet(String sheetId, String password) throws SheetsException {
-        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password));
+        this.parseResult(this.resource.deleteSpreadsheet(sheetId, password, null));
     }
 }

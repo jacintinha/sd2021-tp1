@@ -3,10 +3,15 @@ package tp1.api.service.rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import tp1.api.Spreadsheet;
+import tp1.impl.util.RangeValues;
+
+import java.util.List;
 
 
 @Path(RestSpreadsheets.PATH)
 public interface RestSpreadsheets {
+
+    String HEADER_VERSION = "Sheetsserver-version";
 
     String PATH = "/spreadsheets";
 
@@ -22,7 +27,7 @@ public interface RestSpreadsheets {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createSpreadsheet(Spreadsheet sheet, @QueryParam("password") String password);
+    String createSpreadsheet(@HeaderParam(HEADER_VERSION) Long version, Spreadsheet sheet, @QueryParam("password") String password);
 
 
     /**
@@ -37,7 +42,8 @@ public interface RestSpreadsheets {
      */
     @DELETE
     @Path("/{sheetId}")
-    void deleteSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("password") String password);
+    void deleteSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("password") String password,
+                           @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -55,23 +61,25 @@ public interface RestSpreadsheets {
     @Path("/{sheetId}")
     @Produces(MediaType.APPLICATION_JSON)
     Spreadsheet getSpreadsheet(@PathParam("sheetId") String sheetId, @QueryParam("userId") String userId,
-                               @QueryParam("password") String password);
+                               @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
      * Retrieves the calculated values of a spreadsheet.
      *
-     * @param userId   - The user requesting the values
-     * @param sheetId  - the spreadsheet whose values are being retrieved.
-     * @param password - The password of the user performing the operation.
+     * @param sheetId - the spreadsheet whose values are being retrieved.
+     * @param userId  - The user requesting the values
+     * @param range   - Range of the spreadsheet to be requested.
+     * @param secret  - The secret necessary to run the function.
      * @return 200, if the operation is successful
      * 204, null, in case of no values
      */
     @GET
     @Path("{sheetId}/import/")
     @Produces(MediaType.APPLICATION_JSON)
-    String[][] importValues(@PathParam("sheetId") String sheetId,
-                            @QueryParam("userId") String userId, @QueryParam("range") String range);
+    RangeValues importValues(@PathParam("sheetId") String sheetId,
+                             @QueryParam("userId") String userId, @QueryParam("range") String range,
+                             @QueryParam("secret") String secret, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -89,7 +97,8 @@ public interface RestSpreadsheets {
     @Path("/{sheetId}/values")
     @Produces(MediaType.APPLICATION_JSON)
     String[][] getSpreadsheetValues(@PathParam("sheetId") String sheetId,
-                                    @QueryParam("userId") String userId, @QueryParam("password") String password);
+                                    @QueryParam("userId") String userId, @QueryParam("password") String password,
+                                    @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -109,7 +118,8 @@ public interface RestSpreadsheets {
     @Path("/{sheetId}/{cell}")
     @Consumes(MediaType.APPLICATION_JSON)
     void updateCell(@PathParam("sheetId") String sheetId, @PathParam("cell") String cell, String rawValue,
-                    @QueryParam("userId") String userId, @QueryParam("password") String password);
+                    @QueryParam("userId") String userId, @QueryParam("password") String password,
+                    @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -128,7 +138,7 @@ public interface RestSpreadsheets {
     @POST
     @Path("/{sheetId}/share/{userId}")
     void shareSpreadsheet(@PathParam("sheetId") String sheetId, @PathParam("userId") String userId,
-                          @QueryParam("password") String password);
+                          @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
 
     /**
@@ -146,18 +156,38 @@ public interface RestSpreadsheets {
     @DELETE
     @Path("/{sheetId}/share/{userId}")
     void unshareSpreadsheet(@PathParam("sheetId") String sheetId, @PathParam("userId") String userId,
-                            @QueryParam("password") String password);
+                            @QueryParam("password") String password, @HeaderParam(HEADER_VERSION) Long version);
 
     /**
-     * Deletes all user's spreadsheets.  Only the owner can call this method.
+     * Deletes all user's spreadsheets.
      *
-     * @param userId   - the user whose sheets will be deleted.
-     * @param password - the password of the owner of the spreadsheets.
+     * @param userId - the user whose sheets will be deleted.
+     * @param secret - the secret to access/execute the function.
      * @return 204 if the sheets deletion was successful.
      * 400, otherwise.
      */
     @DELETE
     @Path("/delete/{userId}")
-    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("password") String password);
+    void deleteUserSpreadsheets(@PathParam("userId") String userId, @QueryParam("secret") String secret);
+
+    /**
+     * @param operation
+     * @param secret
+     */
+    @POST
+    @Path("/operation")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void replicateOperation(String operation, @QueryParam("secret") String secret, @HeaderParam(HEADER_VERSION) Long version);
+
+
+    /**
+     * @param startVersion
+     * @param secret
+     * @return
+     */
+    @GET
+    @Path("/operation")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getOperations(@QueryParam("version") Long startVersion, @QueryParam("secret") String secret);
 
 }
